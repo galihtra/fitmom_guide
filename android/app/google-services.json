@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "161249607054",
+    "project_id": "fitmom-guide",
+    "storage_bucket": "fitmom-guide.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161249607054:android:196b39ffa35306ef69f8df",
+        "android_client_info": {
+          "package_name": "com.example.fitmom_guide"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_MKM_j5vh96H9Ll3s5FKqfldWkp3YmAA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

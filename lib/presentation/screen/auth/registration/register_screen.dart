@@ -1,10 +1,10 @@
 import 'package:fitmom_guide/presentation/components/gradient_background/gradient_background.dart';
 import 'package:fitmom_guide/presentation/screen/auth/widget/auth_text_input.dart';
+import 'package:fitmom_guide/presentation/screen/dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/utils/dimensions.dart';
-import '../../home/home_screen.dart';
 import '../../../components/button/custom_button.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -42,7 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

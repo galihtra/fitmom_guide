@@ -66,6 +66,8 @@ class Dimensions {
 
   static const double space50 = 50;
 
+  static const double space100 = 100;
+
   static const double screenPaddingH = 15;
 
   static const double screenPaddingV = 15;

@@ -1,9 +1,9 @@
 import 'package:fitmom_guide/core/utils/my_color.dart';
 import 'package:fitmom_guide/presentation/screen/auth/widget/forgot_button.dart';
+import 'package:fitmom_guide/presentation/screen/dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:fitmom_guide/core/utils/my_images.dart';
 import 'package:fitmom_guide/data/services/auth/auth_service.dart';
-import 'package:fitmom_guide/presentation/screen/home/home_screen.dart';
 import 'package:fitmom_guide/presentation/screen/auth/registration/register_screen.dart';
 
 import '../../../../core/utils/dimensions.dart';
@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (user != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

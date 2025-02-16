@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitmom_guide/core/utils/dimensions.dart';
+import 'package:fitmom_guide/core/utils/my_strings.dart';
 import 'package:flutter/material.dart';
+import '../../../core/utils/my_color.dart';
 import '../../../core/utils/my_images.dart';
+import '../../../core/utils/style.dart';
 import 'widget/cover_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -64,47 +67,67 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.bottomLeft,
-        children: [
-          coverImage(),
-          Positioned(
-            top: Dimensions.topProfile,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 20.0),
-              child: Column(
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        body: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomLeft,
+              children: [
+                coverImage(),
+                Positioned(
+                  top: Dimensions.topProfile,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: Dimensions.space20),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: Dimensions.profileRadius,
+                          backgroundColor: Colors.grey.shade200,
+                          child: SvgPicture.asset(
+                            MyImages.profile,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(height: Dimensions.space10),
+                        Text(
+                          _name,
+                          style: boldMediumLarge,
+                        ),
+                        Text(
+                          _timeAgo,
+                          style: regularMediumLargeSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Dimensions.space100),
+            const TabBar(
+              labelColor: MyColor.secondaryColor,
+              unselectedLabelColor: MyColor.contentTextColor,
+              indicatorColor: MyColor.secondaryColor,
+              tabs: [
+                Tab(text: MyStrings.pelatihan),
+                Tab(text: MyStrings.beritaDanTips),
+                Tab(text: MyStrings.testimoni),
+              ],
+            ),
+            const Expanded(
+              child: TabBarView(
                 children: [
-                  CircleAvatar(
-                    radius: Dimensions.profileRadius,
-                    backgroundColor: Colors.grey.shade200,
-                    child: SvgPicture.asset(
-                      MyImages.profile,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    _name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Text(
-                    _timeAgo,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
+                  Center(child: Text("Home Content")),
+                  Center(child: Text("Workout Content")),
+                  Center(child: Text("Profile Content")),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

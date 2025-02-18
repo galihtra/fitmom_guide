@@ -19,6 +19,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _name = "Loading...";
   String _timeAgo = "Just now";
+  String? _profileImageUrl;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -38,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (userDoc.exists) {
           setState(() {
             _name = userDoc["name"] ?? "No Name";
+            _profileImageUrl = userDoc["profileImage"];
             _timeAgo =
                 _calculateTimeAgo(user.metadata.creationTime ?? DateTime.now());
           });
@@ -48,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _name = "Error loading name";
       });
     }
+    setState(() => _isLoading = false);
   }
 
   String _calculateTimeAgo(DateTime time) {
@@ -83,14 +87,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.only(left: Dimensions.space20),
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: Dimensions.profileRadius,
-                          backgroundColor: Colors.grey.shade200,
-                          child: SvgPicture.asset(
-                            MyImages.profile,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                        _isLoading
+                            ? const CircleAvatar(
+                                radius: Dimensions.profileRadius,
+                                backgroundColor: Colors.grey,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white),
+                              )
+                            : CircleAvatar(
+                                radius: Dimensions.profileRadius,
+                                backgroundColor: Colors.grey.shade200,
+                                backgroundImage: _profileImageUrl != null
+                                    ? NetworkImage(_profileImageUrl!)
+                                    : null,
+                                child: _profileImageUrl == null
+                                    ? SvgPicture.asset(MyImages.profile,
+                                        fit: BoxFit.cover)
+                                    : null,
+                              ),
                         const SizedBox(height: Dimensions.space10),
                         Text(
                           _name,

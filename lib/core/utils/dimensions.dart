@@ -106,5 +106,7 @@ class Dimensions {
 
   static const double profileRadius = 40.0;
 
+  static const double profileRadiusSmalll = 25.0;
+
   static const double topProfile = coverHeight - profileRadius;
 }

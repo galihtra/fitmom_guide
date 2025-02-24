@@ -66,9 +66,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String? profileImageUrl = await _uploadImage(userCredential.user!);
 
       await _firestore.collection("users").doc(userCredential.user!.uid).set({
-        "name": nameController.text,
-        "email": emailController.text,
-        "phone": phoneController.text,
+        "name": nameController.text.trim(),
+        "email": emailController.text.trim(),
+        "phone": phoneController.text.trim(),
         "birthdate": birthdateController.text,
         "profileImage": profileImageUrl,
         "isAdmin": false,

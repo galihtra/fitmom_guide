@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitmom_guide/core/utils/dimensions.dart';
 import 'package:fitmom_guide/core/utils/my_strings.dart';
+import 'package:fitmom_guide/presentation/screen/news/news_list_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../core/utils/my_color.dart';
 import '../../../core/utils/my_images.dart';
@@ -135,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: TabBarView(
                 children: [
                   Center(child: Text("Home Content")),
-                  Center(child: Text("Workout Content")),
+                  NewsListScreen(),
                   Center(child: Text("Profile Content")),
                 ],
               ),

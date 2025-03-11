@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitmom_guide/core/utils/dimensions.dart';
 import 'package:fitmom_guide/core/utils/my_color.dart';
+import 'package:fitmom_guide/presentation/screen/profile/widget/card_profile_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import '../../../core/utils/my_images.dart';
@@ -99,52 +100,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: Dimensions.space10,
-        title: Row(
-          children: [
-            _isLoading
-                ? const CircleAvatar(
-                    radius: Dimensions.profileRadiusSmalll,
-                    backgroundColor: Colors.grey,
-                    child: CircularProgressIndicator(color: Colors.white),
-                  )
-                : CircleAvatar(
-                    radius: Dimensions.profileRadiusSmalll,
-                    backgroundColor: Colors.grey.shade200,
-                    backgroundImage: _profileImageUrl != null
-                        ? NetworkImage(_profileImageUrl!)
-                        : null,
-                    child: _profileImageUrl == null
-                        ? SvgPicture.asset(MyImages.profile, fit: BoxFit.cover)
-                        : null,
-                  ),
-            const SizedBox(width: Dimensions.space10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(_isLoading ? "Loading..." : _name,
-                      style: boldMediumLarge),
-                  Text(_isLoading ? "Loading..." : _timeAgo,
-                      style: regularMediumLargeSecondary),
-                ],
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: Dimensions.space10,
+          title: Row(
+            children: [
+              _isLoading
+                  ? const CircleAvatar(
+                      radius: Dimensions.profileRadiusSmalll,
+                      backgroundColor: Colors.grey,
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                  : CircleAvatar(
+                      radius: Dimensions.profileRadiusSmalll,
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage: _profileImageUrl != null
+                          ? NetworkImage(_profileImageUrl!)
+                          : null,
+                      child: _profileImageUrl == null
+                          ? SvgPicture.asset(MyImages.profile,
+                              fit: BoxFit.cover)
+                          : null,
+                    ),
+              const SizedBox(width: Dimensions.space10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(_isLoading ? "Loading..." : _name,
+                        style: boldMediumLarge),
+                    Text(_isLoading ? "Loading..." : _timeAgo,
+                        style: regularMediumLargeSecondary),
+                  ],
+                ),
               ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout, color: MyColor.secondaryColor),
+              onPressed: () => _confirmLogout(context),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: MyColor.secondaryColor),
-            onPressed: () => _confirmLogout(context),
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text("Profile Screen", style: TextStyle(fontSize: 18)),
-      ),
-    );
+        body: const SingleChildScrollView(
+          child: CardProfileWidget(),
+        ));
   }
 }

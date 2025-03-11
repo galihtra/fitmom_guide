@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../../core/utils/my_color.dart';
 import '../../../core/utils/my_images.dart';
 import '../../../core/utils/style.dart';
+import '../course/course_list.dart';
 import 'widget/cover_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -132,12 +133,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 Tab(text: MyStrings.testimoni),
               ],
             ),
-            const Expanded(
+            Expanded(
               child: TabBarView(
                 children: [
-                  Center(child: Text("Home Content")),
-                  NewsListScreen(),
-                  Center(child: Text("Profile Content")),
+                  CourseListScreen(),
+                  const NewsListScreen(),
+                  const Center(child: Text("Profile Content")),
                 ],
               ),
             ),

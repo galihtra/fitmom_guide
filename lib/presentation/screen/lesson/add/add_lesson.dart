@@ -25,7 +25,8 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   bool _isUploading = false;
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
@@ -47,26 +48,42 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       _isUploading = true;
     });
 
-    String imageUrl = '';
-    if (_image != null) {
-      imageUrl = await _uploadImage(_image!);
+    try {
+      String imageUrl = '';
+      if (_image != null) {
+        imageUrl = await _uploadImage(_image!);
+      }
+
+      final lesson = Lesson(
+        id: '', // Akan diisi otomatis di service
+        idCourse: widget.courseId,
+        name: _nameController.text,
+        description: _descriptionController.text,
+        image: imageUrl,
+        urlVideo: _videoUrlController.text,
+        isCompleted: false,
+        commentar: '',
+        ulasanPengguna: '',
+        rating: 0.0,
+      );
+
+      await _lessonService.addLesson(
+          widget.courseId, lesson); // Perbaikan pemanggilan
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lesson added successfully!')),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
     }
-
-    final lesson = Lesson(
-      id: '',
-      idCourse: widget.courseId,
-      name: _nameController.text,
-      description: _descriptionController.text,
-      image: imageUrl,
-      urlVideo: _videoUrlController.text,
-      isCompleted: false,
-      commentar: '',
-      ulasanPengguna: '',
-      rating: 0.0,
-    );
-
-    await _lessonService.addLesson(lesson);
-    Navigator.pop(context);
   }
 
   @override
@@ -83,30 +100,35 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(labelText: 'Lesson Name'),
-                  validator: (value) => value!.isEmpty ? 'Enter lesson name' : null,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Enter lesson name' : null,
                 ),
                 TextFormField(
                   controller: _descriptionController,
                   decoration: InputDecoration(labelText: 'Description'),
-                  validator: (value) => value!.isEmpty ? 'Enter description' : null,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Enter description' : null,
                 ),
                 SizedBox(height: 15),
                 GestureDetector(
                   onTap: _pickImage,
                   child: _image != null
-                      ? Image.file(_image!, width: 150, height: 150, fit: BoxFit.cover)
+                      ? Image.file(_image!,
+                          width: 150, height: 150, fit: BoxFit.cover)
                       : Container(
                           width: 150,
                           height: 150,
                           color: Colors.grey[300],
-                          child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
+                          child: Icon(Icons.image,
+                              size: 50, color: Colors.grey[600]),
                         ),
                 ),
                 SizedBox(height: 15),
                 TextFormField(
                   controller: _videoUrlController,
                   decoration: InputDecoration(labelText: 'Video URL'),
-                  validator: (value) => value!.isEmpty ? 'Enter video URL' : null,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Enter video URL' : null,
                 ),
                 SizedBox(height: 20),
                 _isUploading

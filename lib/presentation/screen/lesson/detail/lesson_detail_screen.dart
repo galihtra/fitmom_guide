@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:slider_button/slider_button.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../../data/model/lesson/lesson.dart';
+import '../../../../data/services/lesson/lesson_service.dart';
+import '../../rating/rating_screen.dart';
 
 class LessonDetailScreen extends StatefulWidget {
   final Lesson lesson;
+  final String userId;
 
-  LessonDetailScreen({required this.lesson});
+  LessonDetailScreen({required this.lesson, required this.userId});
 
   @override
   _LessonDetailScreenState createState() => _LessonDetailScreenState();
 }
 
 class _LessonDetailScreenState extends State<LessonDetailScreen> {
-  YoutubePlayerController? _youtubeController; // Gunakan nullable
+  YoutubePlayerController? _youtubeController;
+  final LessonService _lessonService = LessonService();
+  bool _isCompleted = false;
 
   @override
   void initState() {
     super.initState();
+    _isCompleted = widget.lesson.isCompleted;
     _initializeYoutubePlayer();
   }
 
@@ -26,33 +34,79 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
       if (videoId != null) {
         _youtubeController = YoutubePlayerController(
           initialVideoId: videoId,
-          flags: YoutubePlayerFlags(
-            autoPlay: false,
+          flags: const YoutubePlayerFlags(
+            autoPlay: true,
             mute: false,
-            loop: false,
+            loop: true,
             forceHD: true,
           ),
         );
-        setState(() {}); // Refresh UI setelah inisialisasi
       }
+    }
+  }
+
+  void _markLessonAsCompleted() async {
+    if (_isCompleted) return;
+
+    try {
+      await _lessonService.updateLessonProgress(
+        widget.lesson.idCourse,
+        widget.lesson.id,
+        widget.userId,
+        true,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isCompleted = true;
+        });
+
+        // Navigasi ke RatingScreen tanpa menunggu, agar UI tetap responsif
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RatingScreen(
+              lesson: widget.lesson,
+              userId: widget.userId,
+              courseId: widget.lesson.idCourse,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Tampilkan error jika gagal menyimpan progres
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal menyelesaikan lesson: $e")),
+      );
     }
   }
 
   @override
   void dispose() {
-    _youtubeController?.dispose(); // Gunakan nullable check
+    _youtubeController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.lesson.name)),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text(
+          widget.lesson.name,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme:
+            const IconThemeData(color: Colors.white), // ✅ Warna ikon back
+        systemOverlayStyle:
+            SystemUiOverlayStyle.dark, // ✅ Pastikan status bar cocok
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Pastikan controller sudah siap sebelum ditampilkan
             widget.lesson.urlVideo.isNotEmpty && _youtubeController != null
                 ? Container(
                     width: double.infinity,
@@ -82,36 +136,47 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.lesson.name,
-                      style:
-                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 10),
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
                   Text(widget.lesson.description,
-                      style: TextStyle(fontSize: 16)),
-                  SizedBox(height: 20),
-                  Text("User Comments",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 5),
-                  widget.lesson.commentar.isNotEmpty
-                      ? Text(widget.lesson.commentar,
-                          style: TextStyle(
-                              fontSize: 14, fontStyle: FontStyle.italic))
-                      : Text("No comments yet",
-                          style: TextStyle(color: Colors.grey)),
-                  SizedBox(height: 20),
-                  Text("User Rating",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Icon(Icons.star, color: Colors.amber),
-                      SizedBox(width: 5),
-                      Text(widget.lesson.rating > 0
-                          ? widget.lesson.rating.toString()
-                          : "No ratings yet"),
-                    ],
-                  ),
+                      style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 20),
+
+                  // Slide Button untuk Mark as Completed
+                  _isCompleted
+                      ? const Center(
+                          child: Text(
+                            "✅ Lesson Completed",
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green),
+                          ),
+                        )
+                      : Center(
+                          child: SliderButton(
+                            action: () async {
+                              _markLessonAsCompleted();
+                              return true;
+                            },
+                            label: const Text(
+                              "Geser Untuk Menyelesaikan",
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black),
+                            ),
+                            icon: const Icon(Icons.play_arrow,
+                                color: Colors.white),
+                            buttonColor: Colors.pink,
+                            backgroundColor: Colors.white,
+                            baseColor: Colors.pink,
+                            width: MediaQuery.of(context).size.width * 0.8,
+                          ),
+                        ),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),

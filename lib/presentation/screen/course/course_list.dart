@@ -5,14 +5,22 @@ import '../../../data/model/course/course.dart';
 import '../../../data/model/lesson/lesson.dart';
 import '../../../data/services/course/course_service.dart';
 import '../../../data/services/lesson/lesson_service.dart';
+import 'add/add_course.dart';
 import 'detail/course_detail.dart';
 
-class CourseListScreen extends StatelessWidget {
-  final CourseService _courseService = CourseService();
-  final LessonService _lessonService = LessonService();
-  final String userId = FirebaseAuth.instance.currentUser!.uid;
-
+class CourseListScreen extends StatefulWidget {
   CourseListScreen({Key? key}) : super(key: key);
+
+  @override
+  State<CourseListScreen> createState() => _CourseListScreenState();
+}
+
+class _CourseListScreenState extends State<CourseListScreen> {
+  final CourseService _courseService = CourseService();
+
+  final LessonService _lessonService = LessonService();
+
+  final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   Widget build(BuildContext context) {
@@ -23,11 +31,11 @@ class CourseListScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return const Center(child: Text('Error loading courses'));
           }
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final allCourses = snapshot.data!;
+          final allCourses = snapshot.data ?? [];
 
           return Padding(
             padding: const EdgeInsets.all(10),
@@ -38,12 +46,14 @@ class CourseListScreen extends StatelessWidget {
                 final bool isEnrolled = course.members.contains(userId);
 
                 return StreamBuilder<List<Lesson>>(
-                  stream: _lessonService.getLessons(course.id),
+                  stream: _lessonService.getLessons(
+                      course.id, userId), // ✅ Perbaikan di sini
                   builder: (context, lessonSnapshot) {
                     if (lessonSnapshot.hasError) {
-                      return const Text('Error loading lessons');
+                      return const Center(child: Text('Error loading lessons'));
                     }
-                    if (!lessonSnapshot.hasData) {
+                    if (lessonSnapshot.connectionState ==
+                        ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
@@ -210,6 +220,8 @@ class CourseListScreen extends StatelessWidget {
                                                     course: course),
                                           ),
                                         );
+                                        // Refresh UI setelah kembali dari LessonDetailScreen
+                                        setState(() {});
                                       }
                                     : null,
                               ),
@@ -224,6 +236,15 @@ class CourseListScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddCourseScreen()),
+          );
+        },
+        child: Icon(Icons.add),
       ),
     );
   }

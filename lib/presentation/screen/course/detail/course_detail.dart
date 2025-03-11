@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../../data/model/course/course.dart';
 import '../../../../data/model/lesson/lesson.dart';
@@ -7,19 +8,28 @@ import '../../lesson/add/add_lesson.dart';
 import '../../lesson/detail/lesson_detail_screen.dart';
 import '../add_member/add_member_screen.dart';
 
-class CourseDetailScreen extends StatelessWidget {
+class CourseDetailScreen extends StatefulWidget {
   final Course course;
-  final CourseService _courseService = CourseService();
-  final LessonService _lessonService = LessonService();
 
   CourseDetailScreen({required this.course});
+
+  @override
+  State<CourseDetailScreen> createState() => _CourseDetailScreenState();
+}
+
+class _CourseDetailScreenState extends State<CourseDetailScreen> {
+  final CourseService _courseService = CourseService();
+
+  final LessonService _lessonService = LessonService();
+
+  final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   void _deleteCourse(BuildContext context) async {
     bool confirmDelete = await _showDeleteConfirmation(context);
     if (confirmDelete) {
-      await _courseService.deleteCourse(course.id);
+      await _courseService.deleteCourse(widget.course.id);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${course.name} deleted successfully')),
+        SnackBar(content: Text('${widget.course.name} deleted successfully')),
       );
       Navigator.pop(context);
     }
@@ -30,7 +40,7 @@ class CourseDetailScreen extends StatelessWidget {
           context: context,
           builder: (context) => AlertDialog(
             title: Text('Delete Course'),
-            content: Text('Are you sure you want to delete ${course.name}?'),
+            content: Text('Are you sure you want to delete ${widget.course.name}?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -50,29 +60,14 @@ class CourseDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(course.name),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.edit),
-            onPressed: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(builder: (context) => EditCourseScreen(course: course)),
-              // );
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.delete, color: Colors.red),
-            onPressed: () => _deleteCourse(context),
-          ),
-        ],
+        title: Text(widget.course.name),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            course.image.isNotEmpty
-                ? Image.network(course.image,
+            widget.course.image.isNotEmpty
+                ? Image.network(widget.course.image,
                     width: double.infinity, height: 200, fit: BoxFit.cover)
                 : Container(
                     width: double.infinity,
@@ -86,11 +81,11 @@ class CourseDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(course.name,
+                  Text(widget.course.name,
                       style:
                           TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   SizedBox(height: 5),
-                  Text(course.description, style: TextStyle(fontSize: 16)),
+                  Text(widget.course.description, style: TextStyle(fontSize: 16)),
                   SizedBox(height: 20),
                   Text("Lessons",
                       style:
@@ -99,7 +94,7 @@ class CourseDetailScreen extends StatelessWidget {
               ),
             ),
             StreamBuilder<List<Lesson>>(
-              stream: _lessonService.getLessons(course.id),
+              stream: _lessonService.getLessons(widget.course.id, userId),
               builder: (context, snapshot) {
                 if (snapshot.hasError)
                   return Center(child: Text('Error loading lessons'));
@@ -143,14 +138,19 @@ class CourseDetailScreen extends StatelessWidget {
                             ? Icon(Icons.check_circle, color: Colors.green)
                             : Icon(Icons.radio_button_unchecked,
                                 color: Colors.grey),
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => LessonDetailScreen(
-                                  lesson: lesson), // Navigasi ke detail lesson
+                                lesson: lesson,
+                                userId: userId,
+                              ),
                             ),
                           );
+
+                          // Refresh UI setelah kembali dari LessonDetailScreen
+                          setState(() {});
                         },
                       ),
                     );
@@ -175,7 +175,7 @@ class CourseDetailScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            AddLessonScreen(courseId: course.id),
+                            AddLessonScreen(courseId: widget.course.id),
                       ),
                     );
                   },
@@ -190,7 +190,7 @@ class CourseDetailScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            AddMemberScreen(courseId: course.id),
+                            AddMemberScreen(courseId: widget.course.id),
                       ),
                     );
                   },

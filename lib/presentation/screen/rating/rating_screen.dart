@@ -85,6 +85,7 @@ class _RatingScreenState extends State<RatingScreen> {
                   onPressed: () {
                     Navigator.pop(context); // Tutup popup
                     Navigator.popUntil(context, (route) => route.isFirst);
+                    // Navigator.pop(context, true);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,

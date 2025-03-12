@@ -103,21 +103,29 @@ class LessonService {
   }
 
   /// Simpan rating & ulasan user
-  Future<void> submitReview(String courseId, String lessonId, String userId,
-      double rating, String comment) async {
-    try {
-      await _firestore
-          .collection('courses')
-          .doc(courseId)
-          .collection('lessons')
-          .doc(lessonId)
-          .collection('lesson_reviews')
-          .doc(userId)
-          .set({'rating': rating, 'comment': comment}, SetOptions(merge: true));
-    } catch (e) {
-      throw Exception("Failed to submit review: $e");
-    }
+Future<void> submitReview(String courseId, String lessonId, String userId,
+    double rating, String comment) async {
+  try {
+    await _firestore
+        .collection('courses')
+        .doc(courseId)
+        .collection('lessons')
+        .doc(lessonId)
+        .collection('lesson_reviews')
+        .doc(userId)
+        .set({
+      'userId': userId, // ✅ Simpan userId
+      'rating': rating,
+      'comment': comment,
+      'timestamp': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    print("✅ Review berhasil disimpan untuk userId: $userId");
+  } catch (e) {
+    throw Exception("Failed to submit review: $e");
   }
+}
+
 
   /// Ambil rating & ulasan user
   Future<LessonReview?> getReview(

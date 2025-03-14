@@ -27,6 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF0F3),
       body: _pages[_selectedIndex], // Menampilkan halaman yang aktif
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,

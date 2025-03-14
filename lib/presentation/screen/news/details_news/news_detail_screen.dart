@@ -9,6 +9,7 @@ class NewsDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF0F3),
       appBar: AppBar(
         title: Text(news.title, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),

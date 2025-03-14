@@ -1,11 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitmom_guide/core/utils/my_color.dart';
+import 'package:fitmom_guide/presentation/screen/course/widget/floating_button_sound.dart';
 import 'package:flutter/material.dart';
 import '../../../data/model/course/course.dart';
 import '../../../data/model/lesson/lesson.dart';
 import '../../../data/services/course/course_service.dart';
 import '../../../data/services/lesson/lesson_service.dart';
-import 'add/add_course.dart';
 import 'detail/course_detail.dart';
 
 class CourseListScreen extends StatefulWidget {
@@ -25,6 +25,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF0F3),
       body: StreamBuilder<List<Course>>(
         stream: _courseService.getCourses(),
         builder: (context, snapshot) {
@@ -237,15 +238,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddCourseScreen()),
-          );
-        },
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: const FloatingButtonSound(),
     );
   }
 }

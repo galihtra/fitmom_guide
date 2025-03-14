@@ -76,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        backgroundColor: const Color(0xFFFFF0F3),
         body: Column(
           children: [
             Stack(

@@ -76,7 +76,7 @@ class _RatingScreenState extends State<RatingScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  "Anda telah menyelesaikan lesson ini dengan sukses! 🎉",
+                  "Anda telah menyelesaikan latihan ini dengan sukses! 🎉",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.black87),
                 ),
@@ -107,7 +107,7 @@ class _RatingScreenState extends State<RatingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFFF0F3), // Warna background pink muda
+      backgroundColor: const Color(0xFFFFF0F3),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),

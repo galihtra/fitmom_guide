@@ -9,7 +9,7 @@ import '../../../../data/services/lesson/lesson_service.dart';
 class CourseDetailScreen extends StatefulWidget {
   final Course course;
 
-  CourseDetailScreen({required this.course});
+  const CourseDetailScreen({super.key, required this.course});
 
   @override
   State<CourseDetailScreen> createState() => _CourseDetailScreenState();
@@ -38,7 +38,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           context: context,
           builder: (context) => AlertDialog(
             title: Text('Delete Course'),
-            content: Text('Are you sure you want to delete ${widget.course.name}?'),
+            content:
+                Text('Are you sure you want to delete ${widget.course.name}?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -57,8 +58,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF0F3),
       appBar: AppBar(
         title: Text(widget.course.name),
+        backgroundColor: const Color(0xFFFFF0F3),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -80,12 +83,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.course.name,
-                      style:
-                          const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 5),
-                  Text(widget.course.description, style: TextStyle(fontSize: 16)),
+                  Text(widget.course.description,
+                      style: TextStyle(fontSize: 16)),
                   const SizedBox(height: 20),
-                  const Text("Lessons",
+                  const Text("Latihan",
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
@@ -107,7 +111,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   itemBuilder: (context, index) {
                     final lesson = lessons[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                       child: ListTile(
@@ -129,18 +134,21 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                     size: 40, color: Colors.grey[600]),
                               ),
                         title: Text(lesson.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(lesson.description,
                             maxLines: 2, overflow: TextOverflow.ellipsis),
                         trailing: lesson.isCompleted
-                            ? const Icon(Icons.check_circle, color: Colors.green)
+                            ? const Icon(Icons.check_circle,
+                                color: Colors.green)
                             : const Icon(Icons.radio_button_unchecked,
                                 color: Colors.grey),
                         onTap: () async {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PreviewLessonScreen(lesson: lesson),
+                              builder: (context) =>
+                                  PreviewLessonScreen(lesson: lesson),
                               // LessonDetailScreen( lesson: lesson, userId: userId,),
                             ),
                           );
@@ -154,10 +162,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 );
               },
             ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
-      
     );
   }
 }

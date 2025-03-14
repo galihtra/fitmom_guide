@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:fitmom_guide/core/utils/my_color.dart';
 import 'package:fitmom_guide/core/utils/my_images.dart';
 import 'package:flutter/material.dart';
-import 'package:fitmom_guide/presentation/screen/auth/login/login_screen.dart';
 
+import '../../../data/wrapper/auth_wrapper.dart';
 import '../../components/gradient_background/gradient_background.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Timer(const Duration(seconds: 2), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
+        MaterialPageRoute(builder: (context) => const AuthWrapper()),
       );
     });
   }

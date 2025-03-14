@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../../core/utils/dimensions.dart';
 import '../../../data/model/news/news_model.dart';
@@ -22,6 +21,7 @@ class _NewsListScreenState extends State<NewsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF0F3),
       body: Padding(
         padding: const EdgeInsets.only(top: Dimensions.space10),
         child: Column(

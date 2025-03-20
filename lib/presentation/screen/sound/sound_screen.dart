@@ -60,8 +60,31 @@ class _SoundScreenState extends State<SoundScreen> {
       if (filePath != null) {
         Reference storageRef =
             FirebaseStorage.instance.ref().child('sounds/$fileName');
-
         UploadTask uploadTask = storageRef.putFile(File(filePath));
+
+        // Tampilkan dialog loading
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Mengunggah Sound...",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
 
         // Tunggu proses upload selesai
         await uploadTask.whenComplete(() => null);
@@ -73,13 +96,19 @@ class _SoundScreenState extends State<SoundScreen> {
           'url': downloadUrl,
         });
 
-        // **Langsung update UI setelah upload selesai**
-        setState(
-            () {}); // Ini akan memicu rebuild UI dan menampilkan audio baru
-
+        // Tutup dialog loading setelah upload selesai
         if (mounted) {
           Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Sound berhasil ditambahkan!"),
+              backgroundColor: Colors.green,
+            ),
+          );
         }
+
+        // Perbarui UI
+        setState(() {});
       }
     }
   }

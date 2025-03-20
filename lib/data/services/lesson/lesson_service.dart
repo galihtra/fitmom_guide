@@ -148,4 +148,16 @@ Future<void> submitReview(String courseId, String lessonId, String userId,
       throw Exception("Failed to fetch review: $e");
     }
   }
+
+  Future<void> addUserPoints(String userId, int points) async {
+    DocumentReference userRef = _firestore.collection('users').doc(userId);
+
+    await _firestore.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userRef);
+      if (!snapshot.exists) return;
+
+      int currentPoints = snapshot.get('points') ?? 0;
+      transaction.update(userRef, {'points': currentPoints + points});
+    });
+  }
 }

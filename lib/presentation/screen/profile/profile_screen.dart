@@ -183,23 +183,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              const Row(
-                children: [
-                  Expanded(child: CardProfileWidget()),
-                  SizedBox(width: 16),
-                  Expanded(child: TotalPointWidget()), // Widget Poin
-                ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      Row(
+                        children: const [
+                          Expanded(child: CardProfileWidget()),
+                          SizedBox(width: 16),
+                          Expanded(child: TotalPointWidget()), // Widget Poin
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      RewardTracker(
+                          claimedDays: claimedDays), // Tidak perlu Flexible
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
-              RewardTracker(claimedDays: claimedDays),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

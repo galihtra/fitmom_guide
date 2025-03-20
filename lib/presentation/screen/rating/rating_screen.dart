@@ -49,6 +49,8 @@ class _RatingScreenState extends State<RatingScreen> {
       _reviewController.text,
     );
 
+     await _lessonService.addUserPoints(widget.userId, 5);
+
     _showCongratulationsPopup(); // ✅ Tampilkan popup setelah submit
   }
 
@@ -85,7 +87,6 @@ class _RatingScreenState extends State<RatingScreen> {
                   onPressed: () {
                     Navigator.pop(context); // Tutup popup
                     Navigator.popUntil(context, (route) => route.isFirst);
-                    // Navigator.pop(context, true);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,
@@ -120,7 +121,7 @@ class _RatingScreenState extends State<RatingScreen> {
               ),
               const SizedBox(height: 20),
               const Text(
-                "Berikan Ulasan Untuk\nLatihan Hari ini",
+                "Berikan Ulasan Untuk Mendapatkan 5 Poin",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,

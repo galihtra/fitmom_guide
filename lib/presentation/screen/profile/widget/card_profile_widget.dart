@@ -7,38 +7,35 @@ class CardProfileWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 25),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.pinkAccent.shade100),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: const [
-              Icon(Icons.privacy_tip_sharp, color: Colors.pink, size: 28),
-              SizedBox(height: 6),
-              Text(
-                "Data Pribadi",
-              ),
-            ],
-          ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 25),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.pinkAccent.shade100),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: const [
+            Icon(Icons.privacy_tip_sharp, color: Colors.pink, size: 28),
+            SizedBox(height: 6),
+            Text(
+              "Data Pribadi",
+            ),
+          ],
         ),
       ),
     );

@@ -48,44 +48,41 @@ class _TotalPointWidgetState extends State<TotalPointWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.pinkAccent.shade100),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.star, color: Colors.amber, size: 40),
-                const SizedBox(width: 4),
-                Text(
-                  _isLoading ? "Loading..." : "$_totalPoints",
-                  style: boldLarge.copyWith(
-                      color: MyColor.secondaryColor, fontSize: 22),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Total Poin",
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.pinkAccent.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.star, color: Colors.amber, size: 40),
+              const SizedBox(width: 4),
+              Text(
+                _isLoading ? "Loading..." : "$_totalPoints",
+                style: boldLarge.copyWith(
+                    color: MyColor.secondaryColor, fontSize: 22),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Total Poin",
+          ),
+        ],
       ),
     );
   }

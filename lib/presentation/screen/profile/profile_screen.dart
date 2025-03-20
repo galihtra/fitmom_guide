@@ -4,11 +4,14 @@ import 'package:fitmom_guide/core/utils/dimensions.dart';
 import 'package:fitmom_guide/core/utils/my_color.dart';
 import 'package:fitmom_guide/presentation/screen/profile/widget/card_profile_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import '../../../core/utils/my_images.dart';
+import 'package:intl/intl.dart';
 import '../../../core/utils/style.dart';
 import '../../../data/services/auth/auth_service.dart';
+import '../../../data/services/reward/reward_service.dart';
 import '../auth/login/login_screen.dart';
+import 'widget/profile_avatar.dart';
+import 'widget/reward_tracker.dart';
+import 'widget/total_point.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,6 +21,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final RewardService _rewardService = RewardService();
+  final AuthService _authService = AuthService();
+
+  List<bool> claimedDays = List.generate(7, (index) => false);
+  final List<String> days = ["S", "M", "T", "W", "T", "F", "S"];
+
   String _name = "Loading...";
   String _timeAgo = "Just now";
   String? _profileImageUrl;
@@ -27,9 +36,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
+    _fetchRewardStatus();
   }
 
-  void _fetchUserData() async {
+  /// **Fetch user data from Firestore**
+  Future<void> _fetchUserData() async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -48,13 +59,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     } catch (e) {
-      setState(() {
-        _name = "Error loading name";
-      });
+      setState(() => _name = "Error loading name");
     }
     setState(() => _isLoading = false);
   }
 
+  /// **Calculate time ago from given DateTime**
   String _calculateTimeAgo(DateTime time) {
     Duration difference = DateTime.now().difference(time);
     if (difference.inDays > 30) {
@@ -70,6 +80,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// **Fetch reward status & claimed days**
+  Future<void> _fetchRewardStatus() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(user.uid)
+        .get();
+
+    if (!userDoc.exists || !userDoc.data().toString().contains("claimedDays"))
+      return;
+
+    List<String> claimedDaysFromFirestore =
+        List<String>.from(userDoc["claimedDays"] ?? []);
+    DateTime today = DateTime.now();
+
+    DateTime startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+    DateTime endOfWeek = startOfWeek.add(const Duration(days: 6));
+
+    if (claimedDaysFromFirestore.isNotEmpty) {
+      DateTime lastClaimDate = DateTime.parse(claimedDaysFromFirestore.last);
+      if (lastClaimDate.isBefore(startOfWeek)) {
+        await FirebaseFirestore.instance
+            .collection("users")
+            .doc(user.uid)
+            .update({"claimedDays": []});
+        claimedDaysFromFirestore = [];
+      }
+    }
+
+    setState(() {
+      for (int i = 0; i < 7; i++) {
+        DateTime day = startOfWeek.add(Duration(days: i));
+        String dayStr = DateFormat('yyyy-MM-dd').format(day);
+        int dayIndex = day.weekday % 7;
+        claimedDays[dayIndex] = claimedDaysFromFirestore.contains(dayStr);
+      }
+    });
+  }
+
+  /// **Show logout confirmation dialog**
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -84,7 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await AuthService().logout();
+              await _authService.logout();
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -100,54 +152,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF0F3),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        titleSpacing: Dimensions.space10,
         backgroundColor: const Color(0xFFFFF0F3),
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          titleSpacing: Dimensions.space10,
-          backgroundColor: const Color(0xFFFFF0F3),
-          title: Row(
-            children: [
-              _isLoading
-                  ? const CircleAvatar(
-                      radius: Dimensions.profileRadiusSmalll,
-                      backgroundColor: Colors.grey,
-                      child: CircularProgressIndicator(color: Colors.white),
-                    )
-                  : CircleAvatar(
-                      radius: Dimensions.profileRadiusSmalll,
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: _profileImageUrl != null
-                          ? NetworkImage(_profileImageUrl!)
-                          : null,
-                      child: _profileImageUrl == null
-                          ? SvgPicture.asset(MyImages.profile,
-                              fit: BoxFit.cover)
-                          : null,
-                    ),
-              const SizedBox(width: Dimensions.space10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(_isLoading ? "Loading..." : _name,
-                        style: boldMediumLarge),
-                    Text(_isLoading ? "Loading..." : _timeAgo,
-                        style: regularMediumLargeSecondary),
-                  ],
-                ),
+        title: Row(
+          children: [
+            ProfileAvatar(
+                isLoading: _isLoading, profileImageUrl: _profileImageUrl),
+            const SizedBox(width: Dimensions.space10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(_isLoading ? "Loading..." : _name,
+                      style: boldMediumLarge),
+                  Text(_isLoading ? "Loading..." : _timeAgo,
+                      style: regularMediumLargeSecondary),
+                ],
               ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout, color: MyColor.secondaryColor),
-              onPressed: () => _confirmLogout(context),
             ),
           ],
         ),
-        body: const SingleChildScrollView(
-          child: CardProfileWidget(),
-        ));
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: MyColor.secondaryColor),
+            onPressed: () => _confirmLogout(context),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              const Row(
+                children: [
+                  Expanded(child: CardProfileWidget()),
+                  SizedBox(width: 16),
+                  Expanded(child: TotalPointWidget()), // Widget Poin
+                ],
+              ),
+              const SizedBox(height: 20),
+              RewardTracker(claimedDays: claimedDays),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

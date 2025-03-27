@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitmom_guide/core/utils/dimensions.dart';
 import 'package:fitmom_guide/core/utils/my_color.dart';
 import 'package:fitmom_guide/presentation/screen/profile/widget/card_profile_widget.dart';
+import 'package:fitmom_guide/presentation/screen/profile/widget/contact_admin_widget.dart';
+import 'package:fitmom_guide/presentation/screen/profile/widget/delete_account_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/utils/style.dart';
@@ -198,12 +200,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: const [
                           Expanded(child: CardProfileWidget()),
                           SizedBox(width: 16),
-                          Expanded(child: TotalPointWidget()), // Widget Poin
+                          Expanded(child: TotalPointWidget()),
                         ],
                       ),
                       const SizedBox(height: 20),
                       RewardTracker(
                           claimedDays: claimedDays), // Tidak perlu Flexible
+                      ContactAdminWidget(),
+                      DeleteAccountWidget(),
                     ],
                   ),
                 ),

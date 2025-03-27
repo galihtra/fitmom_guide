@@ -5,8 +5,6 @@ import '../../../../data/model/course/course.dart';
 import '../../../../data/model/lesson/lesson.dart';
 import '../../../../data/services/course/course_service.dart';
 import '../../../../data/services/lesson/lesson_service.dart';
-import '../../lesson/add/add_lesson.dart';
-import '../add_member/add_member_screen.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final Course course;
@@ -168,47 +166,47 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           ],
         ),
       ),
-      floatingActionButton: Stack(
-        children: [
-          Positioned(
-            bottom: 16.0,
-            right: 16.0,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FloatingActionButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            AddLessonScreen(courseId: widget.course.id),
-                      ),
-                    );
-                  },
-                  heroTag: 'addLesson',
-                  child: Icon(Icons.add),
-                ),
-                SizedBox(height: 8),
-                FloatingActionButton(
-                  onPressed: () {
-                    // tambah member
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            AddMemberScreen(courseId: widget.course.id),
-                      ),
-                    );
-                  },
-                  heroTag: 'otherAction',
-                  child: Icon(Icons.settings),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      // floatingActionButton: Stack(
+      //   children: [
+      //     Positioned(
+      //       bottom: 16.0,
+      //       right: 16.0,
+      //       child: Column(
+      //         crossAxisAlignment: CrossAxisAlignment.end,
+      //         children: [
+      //           FloatingActionButton(
+      //             onPressed: () {
+      //               Navigator.push(
+      //                 context,
+      //                 MaterialPageRoute(
+      //                   builder: (context) =>
+      //                       AddLessonScreen(courseId: widget.course.id),
+      //                 ),
+      //               );
+      //             },
+      //             heroTag: 'addLesson',
+      //             child: Icon(Icons.add),
+      //           ),
+      //           SizedBox(height: 8),
+      //           FloatingActionButton(
+      //             onPressed: () {
+      //               // tambah member
+      //               Navigator.push(
+      //                 context,
+      //                 MaterialPageRoute(
+      //                   builder: (context) =>
+      //                       AddMemberScreen(courseId: widget.course.id),
+      //                 ),
+      //               );
+      //             },
+      //             heroTag: 'otherAction',
+      //             child: Icon(Icons.settings),
+      //           ),
+      //         ],
+      //       ),
+      //     ),
+      //   ],
+      // ),
     );
   }
 }

@@ -36,18 +36,26 @@ class _CourseListScreenState extends State<CourseListScreen> {
           }
 
           final allCourses = snapshot.data ?? [];
+          final unlockedCourses = allCourses
+              .where((course) => course.members.contains(userId))
+              .toList();
+          final lockedCourses = allCourses
+              .where((course) => !course.members.contains(userId))
+              .toList();
+
+          // Menggabungkan unlocked courses ke atas dan locked courses di bawah
+          final sortedCourses = [...unlockedCourses, ...lockedCourses];
 
           return Padding(
             padding: const EdgeInsets.all(10),
             child: ListView.builder(
-              itemCount: allCourses.length,
+              itemCount: sortedCourses.length,
               itemBuilder: (context, index) {
-                final course = allCourses[index];
+                final course = sortedCourses[index];
                 final bool isEnrolled = course.members.contains(userId);
 
                 return StreamBuilder<List<Lesson>>(
-                  stream: _lessonService.getLessons(
-                      course.id, userId), // ✅ Perbaikan di sini
+                  stream: _lessonService.getLessons(course.id, userId),
                   builder: (context, lessonSnapshot) {
                     if (lessonSnapshot.hasError) {
                       return const Center(child: Text('Error loading lessons'));
@@ -147,10 +155,9 @@ class _CourseListScreenState extends State<CourseListScreen> {
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-
-                                        // Tambahkan teks jika belum terdaftar
-                                        if (!isEnrolled) ...[
+                                        if (!isEnrolled)
                                           const SizedBox(height: 5),
+                                        if (!isEnrolled)
                                           const Text(
                                             "Hubungi admin untuk membuka pelatihan ini.",
                                             style: TextStyle(
@@ -159,11 +166,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
                                               color: Colors.redAccent,
                                             ),
                                           ),
-                                        ],
-
                                         const SizedBox(height: 10),
-
-                                        // Progress Bar hanya jika terdaftar
                                         if (isEnrolled)
                                           Column(
                                             crossAxisAlignment:
@@ -220,7 +223,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
                                                     course: course),
                                           ),
                                         );
-                                        // Refresh UI setelah kembali dari LessonDetailScreen
                                         setState(() {});
                                       }
                                     : null,

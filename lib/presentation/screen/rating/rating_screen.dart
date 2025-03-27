@@ -78,7 +78,7 @@ class _RatingScreenState extends State<RatingScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  "Anda telah menyelesaikan latihan ini dengan sukses! 🎉",
+                  "Selamat anda mendapatkan 5 poin! 🎉",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.black87),
                 ),
@@ -94,7 +94,7 @@ class _RatingScreenState extends State<RatingScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text("Lanjut ke Course",
+                  child: const Text("Lanjut Latihan",
                       style: TextStyle(color: Colors.white)),
                 ),
               ],

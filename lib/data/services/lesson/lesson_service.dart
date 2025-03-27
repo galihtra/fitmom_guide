@@ -58,6 +58,7 @@ class LessonService {
         .collection('courses')
         .doc(courseId)
         .collection('lessons')
+        .orderBy('index') // Sort lesson berdasarkan index
         .snapshots()
         .asyncMap((snapshot) async {
       List<Lesson> lessons = [];

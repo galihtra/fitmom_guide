@@ -65,6 +65,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         commentar: '',
         ulasanPengguna: '',
         rating: 0.0,
+        index: 0,
       );
 
       await _lessonService.addLesson(

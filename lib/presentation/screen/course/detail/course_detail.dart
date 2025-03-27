@@ -3,7 +3,6 @@ import 'package:fitmom_guide/presentation/screen/lesson/preview/preview_lesson.d
 import 'package:flutter/material.dart';
 import '../../../../data/model/course/course.dart';
 import '../../../../data/model/lesson/lesson.dart';
-import '../../../../data/services/course/course_service.dart';
 import '../../../../data/services/lesson/lesson_service.dart';
 
 class CourseDetailScreen extends StatefulWidget {
@@ -16,44 +15,9 @@ class CourseDetailScreen extends StatefulWidget {
 }
 
 class _CourseDetailScreenState extends State<CourseDetailScreen> {
-  final CourseService _courseService = CourseService();
-
   final LessonService _lessonService = LessonService();
-
   final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-  void _deleteCourse(BuildContext context) async {
-    bool confirmDelete = await _showDeleteConfirmation(context);
-    if (confirmDelete) {
-      await _courseService.deleteCourse(widget.course.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${widget.course.name} deleted successfully')),
-      );
-      Navigator.pop(context);
-    }
-  }
-
-  Future<bool> _showDeleteConfirmation(BuildContext context) async {
-    return await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Delete Course'),
-            content:
-                Text('Are you sure you want to delete ${widget.course.name}?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('Delete', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,8 +38,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     width: double.infinity,
                     height: 200,
                     color: Colors.grey[300],
-                    child:
-                        Icon(Icons.image, size: 100, color: Colors.grey[600]),
+                    child: Icon(Icons.image, size: 100, color: Colors.grey[600]),
                   ),
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -83,15 +46,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.course.name,
-                      style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.bold)),
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 5),
-                  Text(widget.course.description,
-                      style: TextStyle(fontSize: 16)),
+                  Text(widget.course.description, style: TextStyle(fontSize: 16)),
                   const SizedBox(height: 20),
                   const Text("Latihan",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -103,7 +63,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 if (!snapshot.hasData)
                   return Center(child: CircularProgressIndicator());
 
-                final lessons = snapshot.data!;
+                // Urutkan lessons berdasarkan nilai index
+                final lessons = snapshot.data!..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+
                 return ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -111,8 +73,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   itemBuilder: (context, index) {
                     final lesson = lessons[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
+                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                       child: ListTile(
@@ -130,26 +91,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                 width: 60,
                                 height: 60,
                                 color: Colors.grey[300],
-                                child: Icon(Icons.image,
-                                    size: 40, color: Colors.grey[600]),
+                                child: Icon(Icons.image, size: 40, color: Colors.grey[600]),
                               ),
-                        title: Text(lesson.name,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(lesson.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(lesson.description,
                             maxLines: 2, overflow: TextOverflow.ellipsis),
                         trailing: lesson.isCompleted
-                            ? const Icon(Icons.check_circle,
-                                color: Colors.green)
-                            : const Icon(Icons.radio_button_unchecked,
-                                color: Colors.grey),
+                            ? const Icon(Icons.check_circle, color: Colors.green)
+                            : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
                         onTap: () async {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  PreviewLessonScreen(lesson: lesson),
-                              // LessonDetailScreen( lesson: lesson, userId: userId,),
+                              builder: (context) => PreviewLessonScreen(lesson: lesson),
                             ),
                           );
 
@@ -166,47 +120,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           ],
         ),
       ),
-      // floatingActionButton: Stack(
-      //   children: [
-      //     Positioned(
-      //       bottom: 16.0,
-      //       right: 16.0,
-      //       child: Column(
-      //         crossAxisAlignment: CrossAxisAlignment.end,
-      //         children: [
-      //           FloatingActionButton(
-      //             onPressed: () {
-      //               Navigator.push(
-      //                 context,
-      //                 MaterialPageRoute(
-      //                   builder: (context) =>
-      //                       AddLessonScreen(courseId: widget.course.id),
-      //                 ),
-      //               );
-      //             },
-      //             heroTag: 'addLesson',
-      //             child: Icon(Icons.add),
-      //           ),
-      //           SizedBox(height: 8),
-      //           FloatingActionButton(
-      //             onPressed: () {
-      //               // tambah member
-      //               Navigator.push(
-      //                 context,
-      //                 MaterialPageRoute(
-      //                   builder: (context) =>
-      //                       AddMemberScreen(courseId: widget.course.id),
-      //                 ),
-      //               );
-      //             },
-      //             heroTag: 'otherAction',
-      //             child: Icon(Icons.settings),
-      //           ),
-      //         ],
-      //       ),
-      //     ),
-      //   ],
-      // ),
     );
   }
 }

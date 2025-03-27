@@ -5,10 +5,11 @@ class Lesson {
   String description;
   String image;
   String urlVideo;
+  bool isCompleted;
   String commentar;
   String ulasanPengguna;
   double rating;
-  bool isCompleted; // Status user, tidak disimpan langsung di Firestore
+  int index;
 
   Lesson({
     required this.id,
@@ -17,10 +18,11 @@ class Lesson {
     required this.description,
     required this.image,
     required this.urlVideo,
+    required this.isCompleted,
     required this.commentar,
     required this.ulasanPengguna,
     required this.rating,
-    this.isCompleted = false, // Default false jika belum ada data
+    required this.index,
   });
 
   factory Lesson.fromMap(Map<String, dynamic> map, String id) {
@@ -31,9 +33,11 @@ class Lesson {
       description: map['description'] ?? '',
       image: map['image'] ?? '',
       urlVideo: map['url_video'] ?? '',
+      isCompleted: map['is_completed'] ?? false,
       commentar: map['commentar'] ?? '',
       ulasanPengguna: map['ulasan_pengguna'] ?? '',
       rating: (map['rating'] ?? 0).toDouble(),
+      index: map['index'] ?? 0,
     );
   }
 
@@ -44,8 +48,10 @@ class Lesson {
       'description': description,
       'image': image,
       'url_video': urlVideo,
+      'is_completed': isCompleted,
       'commentar': commentar,
       'ulasan_pengguna': ulasanPengguna,
+      'index': index, 
       'rating': rating,
     };
   }

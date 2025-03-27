@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitmom_guide/core/utils/my_color.dart';
-import 'package:fitmom_guide/presentation/screen/course/widget/floating_button_sound.dart';
 import 'package:flutter/material.dart';
 import '../../../data/model/course/course.dart';
 import '../../../data/model/lesson/lesson.dart';
@@ -89,7 +88,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
                                           ? Image.network(
                                               course.image,
                                               width: double.infinity,
-                                              height: 150,
+                                              height: 100,
                                               fit: BoxFit.cover,
                                               errorBuilder: (context, error,
                                                       stackTrace) =>
@@ -103,7 +102,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
                                               ),
                                             )
                                           : Container(
-                                              height: 150,
+                                              height: 100,
                                               color: Colors.grey[300],
                                               child: const Icon(Icons.image,
                                                   size: 60, color: Colors.grey),
@@ -238,7 +237,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
           );
         },
       ),
-      floatingActionButton: const FloatingButtonSound(),
     );
   }
 }

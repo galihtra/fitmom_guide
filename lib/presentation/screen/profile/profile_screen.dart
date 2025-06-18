@@ -207,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       RewardTracker(
                           claimedDays: claimedDays), // Tidak perlu Flexible
                       ContactAdminWidget(),
-                      DeleteAccountWidget(),
+                      // DeleteAccountWidget(),
                     ],
                   ),
                 ),

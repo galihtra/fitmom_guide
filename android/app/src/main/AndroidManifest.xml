@@ -7,7 +7,7 @@
 
     <application
         android:usesCleartextTraffic="true"
-        android:label="fitmom_guide"
+        android:label="Fitmom Guide"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

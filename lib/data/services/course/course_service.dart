@@ -13,6 +13,10 @@ class CourseService {
     await _courseRef.doc(id).update(course.toMap());
   }
 
+  Future<void> updateCourseOrder(String courseId, int newOrder) async {
+  await _courseRef.doc(courseId).update({'order': newOrder});
+}
+
   Future<void> deleteCourse(String id) async {
     await _courseRef.doc(id).delete();
   }

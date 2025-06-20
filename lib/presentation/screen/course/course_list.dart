@@ -125,7 +125,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Mulai Belajar',
+                                  'Free Akses',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

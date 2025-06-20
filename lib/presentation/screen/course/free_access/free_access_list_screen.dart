@@ -24,7 +24,7 @@ class _FreeAccessListScreenState extends State<FreeAccessListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF0F3),
       appBar: AppBar(
-        title: const Text('Kursus Gratis'),
+        title: const Text('Free Akses Program'),
         backgroundColor: MyColor.primaryColor,
       ),
       body: StreamBuilder<List<Course>>(

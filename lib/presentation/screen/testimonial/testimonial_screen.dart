@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitmom_guide/presentation/screen/testimonial/add/add_testimonial_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'widget/image_frame_widget.dart';
 import 'widget/like_button_widget.dart';
 
 class TestimonialScreen extends StatefulWidget {
@@ -56,12 +55,12 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
                     var testimonial = testimonials[index];
                     var data = testimonial.data() as Map<String, dynamic>;
 
+                    final imageUrl = data['image'] ?? '';
+
                     return SingleChildScrollView(
                       child: Column(
                         children: [
-                          const SizedBox(
-                            height: 20,
-                          ),
+                          const SizedBox(height: 20),
                           Card(
                             elevation: 5,
                             shape: RoundedRectangleBorder(
@@ -73,6 +72,7 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
+                                  // Like button + likes count
                                   Row(
                                     children: [
                                       LikeButton(docId: testimonial.id),
@@ -88,28 +88,52 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
                                   ),
                                   const SizedBox(height: 15),
 
-                                  // Gambar Before & After
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Flexible(
-                                        child: ImageFrame(
-                                          imagePath: data['before'] ?? '',
-                                          screenWidth: screenWidth,
+                                  // Single Image Display
+                                  if (imageUrl.isNotEmpty)
+                                    Container(
+                                      width: screenWidth * 0.7,
+                                      height: screenHeight * 0.3,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.network(
+                                          imageUrl,
+                                          fit: BoxFit.cover,
+                                          loadingBuilder: (context, child,
+                                              loadingProgress) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                value: loadingProgress
+                                                            .expectedTotalBytes !=
+                                                        null
+                                                    ? loadingProgress
+                                                            .cumulativeBytesLoaded /
+                                                        loadingProgress
+                                                            .expectedTotalBytes!
+                                                    : null,
+                                              ),
+                                            );
+                                          },
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey[200],
+                                              child: const Icon(
+                                                  Icons.broken_image,
+                                                  size: 50),
+                                            );
+                                          },
                                         ),
                                       ),
-                                      const Icon(Icons.arrow_forward,
-                                          color: Colors.pink, size: 30),
-                                      Flexible(
-                                        child: ImageFrame(
-                                          imagePath: data['after'] ?? '',
-                                          screenWidth: screenWidth,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+
                                   const SizedBox(height: 20),
+
+                                  // Name
                                   Text(
                                     data['name'] ?? '',
                                     overflow: TextOverflow.ellipsis,
@@ -121,11 +145,11 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
                                     ),
                                   ),
 
+                                  // Description
                                   ConstrainedBox(
                                     constraints: BoxConstraints(
                                       maxHeight: screenHeight * 0.15,
-                                      maxWidth: screenWidth *
-                                          0.8, // Batasi lebar agar sama rata
+                                      maxWidth: screenWidth * 0.8,
                                     ),
                                     child: SingleChildScrollView(
                                       child: Text(
@@ -135,8 +159,9 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.black87),
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -155,16 +180,6 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
           );
         },
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //           builder: (context) => const AddTestimonialScreen()),
-      //     );
-      //   },
-      //   child: const Icon(Icons.add),
-      // ),
     );
   }
 }

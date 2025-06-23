@@ -4,7 +4,6 @@ import 'package:fitmom_guide/core/utils/dimensions.dart';
 import 'package:fitmom_guide/core/utils/my_color.dart';
 import 'package:fitmom_guide/presentation/screen/profile/widget/card_profile_widget.dart';
 import 'package:fitmom_guide/presentation/screen/profile/widget/contact_admin_widget.dart';
-import 'package:fitmom_guide/presentation/screen/profile/widget/delete_account_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/utils/style.dart';
@@ -14,6 +13,7 @@ import '../auth/login/login_screen.dart';
 import 'widget/profile_avatar.dart';
 import 'widget/reward_tracker.dart';
 import 'widget/total_point.dart';
+import 'widget/twibbon_button.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -208,6 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           claimedDays: claimedDays), // Tidak perlu Flexible
                       ContactAdminWidget(),
                       // DeleteAccountWidget(),
+                      TwibbonCardWidget(),
                     ],
                   ),
                 ),

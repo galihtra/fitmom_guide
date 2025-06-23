@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:confetti/confetti.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +8,7 @@ import 'package:fitmom_guide/presentation/screen/news/news_list_screen.dart';
 import 'package:fitmom_guide/presentation/screen/testimonial/testimonial_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import '../../../core/utils/my_color.dart';
 import '../../../core/utils/my_images.dart';
 import '../../../core/utils/style.dart';
@@ -26,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final RewardService _rewardService = RewardService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   int userPoints = 0;
   String _name = "Loading...";
   String _timeAgo = "Just now";
@@ -41,21 +42,84 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchUserData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkClaimStatus();
+      _showReminderPopup(); // Moved reminder popup here
     });
+  }
+
+  Future<void> _showReminderPopup() async {
+    final reminderSnapshot = await _firestore.collection('reminders').get();
+    final imageUrls = reminderSnapshot.docs
+        .map((doc) => (doc.data() as Map<String, dynamic>)['imageUrl'] ?? '')
+        .where((url) => url.isNotEmpty)
+        .toList();
+
+    if (imageUrls.isNotEmpty && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          contentPadding: EdgeInsets.zero,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                children: [
+                  CarouselSlider(
+                    options: CarouselOptions(
+                      height: 500,
+                      autoPlay: true,
+                      enlargeCenterPage: true,
+                      viewportFraction: 1.0,
+                      aspectRatio: 16 / 9,
+                    ),
+                    items: imageUrls.map((imageUrl) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          imageUrl,
+                          width: double.infinity,
+                          fit: BoxFit.fill,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                            color: Colors.grey[300],
+                            child: const Icon(
+                              Icons.broken_image,
+                              size: 100,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  Positioned(
+                    top: 5,
+                    right: 5,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.black),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _checkClaimStatus() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+    DocumentSnapshot userDoc = await _firestore
         .collection("users")
         .doc(user.uid)
         .get();
 
     String todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-    // Cek apakah field "claimedDays" ada dan valid
     List<String> claimedDays = [];
     if (userDoc.exists && userDoc.data() != null) {
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
@@ -65,14 +129,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // Jika belum klaim hari ini, tampilkan modal
     if (!claimedDays.contains(todayStr)) {
       _showRewardModal();
     }
   }
 
   void _showRewardModal() {
-    _confettiController.play(); // Memulai animasi confetti
+    _confettiController.play();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -84,31 +147,31 @@ class _HomeScreenState extends State<HomeScreen> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // Update Firestore agar user tidak bisa klaim dua kali dalam sehari
     String todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-    await FirebaseFirestore.instance.collection("users").doc(user.uid).update({
+    await _firestore.collection("users").doc(user.uid).update({
       "claimedDays": FieldValue.arrayUnion([todayStr])
     });
 
-    // Tambahkan reward ke user
     await _rewardService.claimDailyReward();
     int points = await _rewardService.getUserPoints();
 
-    setState(() {
-      userPoints = points;
-      _hasClaimedToday = true;
-    });
+    if (mounted) {
+      setState(() {
+        userPoints = points;
+        _hasClaimedToday = true;
+      });
 
-    Navigator.of(context).pop();
+      Navigator.of(context).pop();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Selamat! Anda mendapatkan 1 poin hari ini 🎉"),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 3),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Selamat! Anda mendapatkan 1 poin hari ini 🎉"),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Widget _buildRewardModal() {
@@ -173,7 +236,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // Tambah Icon Hadiah
           Positioned(
             top: -40,
             child: CircleAvatar(
@@ -183,7 +245,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(Icons.card_giftcard, color: Colors.pinkAccent, size: 50),
             ),
           ),
-          // Confetti Animation
           ConfettiWidget(
             confettiController: _confettiController,
             blastDirection: -pi / 2,
@@ -200,26 +261,32 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        DocumentSnapshot userDoc = await _firestore
             .collection("users")
             .doc(user.uid)
             .get();
 
         if (userDoc.exists) {
-          setState(() {
-            _name = userDoc["name"] ?? "No Name";
-            _profileImageUrl = userDoc["profileImage"];
-            _timeAgo =
-                _calculateTimeAgo(user.metadata.creationTime ?? DateTime.now());
-          });
+          if (mounted) {
+            setState(() {
+              _name = userDoc["name"] ?? "No Name";
+              _profileImageUrl = userDoc["profileImage"];
+              _timeAgo =
+                  _calculateTimeAgo(user.metadata.creationTime ?? DateTime.now());
+            });
+          }
         }
       }
     } catch (e) {
-      setState(() {
-        _name = "Error loading name";
-      });
+      if (mounted) {
+        setState(() {
+          _name = "Error loading name";
+        });
+      }
     }
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   String _calculateTimeAgo(DateTime time) {
@@ -235,6 +302,12 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       return "Just now";
     }
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   @override

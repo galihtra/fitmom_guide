@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fitmom_guide/core/utils/my_color.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -22,6 +23,36 @@ class _CourseListScreenState extends State<CourseListScreen> {
   final LessonService _lessonService = LessonService();
   final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   List<Course> _sortedCourses = [];
+  String? adminPhoneNumber;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAdminPhoneNumber();
+  }
+
+  Future<void> fetchAdminPhoneNumber() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('whatsapp_admin')
+        .orderBy('created_at', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      String number = snapshot.docs.first['number'];
+
+      // Normalisasi: ubah 08xxxx jadi 628xxxx
+      if (number.startsWith('08')) {
+        number = number.replaceFirst('08', '628');
+      } else if (number.startsWith('0')) {
+        number = '62${number.substring(1)}';
+      }
+
+      setState(() {
+        adminPhoneNumber = number;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,26 +76,22 @@ class _CourseListScreenState extends State<CourseListScreen> {
 
           final allCourses = snapshot.data ?? [];
 
-          // Filter kursus gratis
           final freeCourses = allCourses
               .where((c) => c.isAvailable && c.members.isEmpty)
               .toList();
 
-          // Kursus yang sudah di-enroll (termasuk free)
           final unlockedCourses = allCourses
               .where((course) =>
                   course.members.contains(userId) &&
                   !(course.isAvailable && course.members.isEmpty))
               .toList();
 
-          // Kursus terkunci
           final lockedCourses = allCourses
               .where((course) =>
                   !course.members.contains(userId) &&
                   !(course.isAvailable && course.members.isEmpty))
               .toList();
 
-          // Inisialisasi _sortedCourses jika masih kosong
           if (_sortedCourses.isEmpty) {
             _sortedCourses = [...unlockedCourses, ...lockedCourses];
           }
@@ -74,7 +101,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Free Access
                 const Text(
                   'Free Akses Program',
                   style: TextStyle(
@@ -84,8 +110,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Free Access Card
                 if (freeCourses.isNotEmpty)
                   GestureDetector(
                     onTap: () {
@@ -151,8 +175,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
                     ),
                   ),
                 const SizedBox(height: 24),
-
-                // All Programs Header
                 const Text(
                   'Semua Program',
                   style: TextStyle(
@@ -161,8 +183,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
                     color: Colors.black87,
                   ),
                 ),
-
-                // Course List with Reorderable Functionality
                 ReorderableListView(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -177,9 +197,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
                   }).toList(),
                   onReorder: (oldIndex, newIndex) {
                     setState(() {
-                      if (oldIndex < newIndex) {
-                        newIndex -= 1;
-                      }
+                      if (oldIndex < newIndex) newIndex--;
                       final Course item = _sortedCourses.removeAt(oldIndex);
                       _sortedCourses.insert(newIndex, item);
                     });
@@ -212,11 +230,19 @@ class _CourseListScreenState extends State<CourseListScreen> {
                 );
               }
             : () {
+                if (adminPhoneNumber == null || adminPhoneNumber!.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nomor admin belum tersedia'),
+                    ),
+                  );
+                  return;
+                }
                 showDialog(
                   context: context,
                   builder: (context) => AccessDeniedDialog(
                     courseName: course.name,
-                    adminPhone: '6287738479403',
+                    adminPhone: adminPhoneNumber!,
                   ),
                 );
               },
@@ -243,11 +269,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Drag handle
-                      // const Icon(Icons.drag_handle, color: Colors.grey),
-                      const SizedBox(width: 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
@@ -263,18 +285,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
                               child: Icon(
                                 Icons.broken_image,
                                 color: MyColor.primaryColor,
-                              ),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: 60,
-                              height: 60,
-                              color: MyColor.primaryColor.withOpacity(0.1),
-                              child: const Center(
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
                               ),
                             );
                           },
@@ -314,9 +324,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
                       value: progress,
                       minHeight: 6,
                       backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation(
-                        MyColor.primaryColor,
-                      ),
+                      valueColor: AlwaysStoppedAnimation(MyColor.primaryColor),
                     ),
                     const SizedBox(height: 8),
                     Row(

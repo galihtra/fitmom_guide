@@ -120,128 +120,143 @@ class _PreviewLessonScreenState extends State<PreviewLessonScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage(widget.lesson.image),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              widget.lesson.name,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Column(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Icon(Icons.star, color: Colors.pink, size: 30),
-                    Text(_averageRating.toStringAsFixed(1)),
-                  ],
-                ),
-                const SizedBox(width: 30),
-                Column(
-                  children: [
-                    const Icon(Icons.chat, color: Colors.pink, size: 30),
-                    Text('$_reviewCount'),
-                  ],
-                ),
-                const SizedBox(width: 30),
-                Column(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: widget.lesson.isCompleted
-                          ? Colors.green
-                          : Colors.grey,
-                      size: 30,
+                    const SizedBox(height: 20),
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(widget.lesson.image),
                     ),
-                    Text(widget.lesson.isCompleted
-                        ? "Telah Selesai"
-                        : "Belum Selesai"),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(10),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.pinkAccent),
-              ),
-              child: Text(
-                _lessonDescription.isNotEmpty
-                    ? _lessonDescription
-                    : "Deskripsi tidak tersedia",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text("Ulasan Pengguna",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _reviews.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 10),
+                    Text(
+                      widget.lesson.name,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          _reviews[index]['user'],
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                              color: Colors.pinkAccent),
+                        Column(
+                          children: [
+                            const Icon(Icons.star,
+                                color: Colors.pink, size: 30),
+                            Text(_averageRating.toStringAsFixed(1)),
+                          ],
                         ),
-                        Text(_reviews[index]['comment']),
-                        const Divider(color: Colors.pinkAccent),
+                        const SizedBox(width: 30),
+                        Column(
+                          children: [
+                            const Icon(Icons.chat,
+                                color: Colors.pink, size: 30),
+                            Text('$_reviewCount'),
+                          ],
+                        ),
+                        const SizedBox(width: 30),
+                        Column(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: widget.lesson.isCompleted
+                                  ? Colors.green
+                                  : Colors.grey,
+                              size: 30,
+                            ),
+                            Text(widget.lesson.isCompleted
+                                ? "Telah Selesai"
+                                : "Belum Selesai"),
+                          ],
+                        ),
                       ],
                     ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LessonDetailScreen(
-                          lesson: widget.lesson, userId: widget.userId),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.pinkAccent),
+                      ),
+                      child: Text(
+                        _lessonDescription.isNotEmpty
+                            ? _lessonDescription
+                            : "Deskripsi tidak tersedia",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pink,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                    const SizedBox(height: 20),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Ulasan Pengguna",
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      children: _reviews.map((review) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                review['user'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.pinkAccent,
+                                ),
+                              ),
+                              Text(review['comment']),
+                              const Divider(color: Colors.pinkAccent),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const Spacer(), // Ini memastikan tombol tetap di bawah jika tinggi lebih
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LessonDetailScreen(
+                                lesson: widget.lesson,
+                                userId: widget.userId,
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.pink,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text("MULAI",
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-                child:
-                    const Text("MULAI", style: TextStyle(color: Colors.white)),
               ),
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

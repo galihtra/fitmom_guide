@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahkan ini untuk ak
 import 'package:fitmom_guide/presentation/screen/lesson/preview/preview_lesson.dart';
 import 'package:carousel_slider/carousel_slider.dart'; // Carousel Slider untuk slider gambar
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../data/model/course/course.dart';
 import '../../../../data/model/lesson/lesson.dart';
 import '../../../../data/services/lesson/lesson_service.dart';
@@ -27,68 +28,83 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   }
 
   Future<void> _showReminderPopup() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final today = DateTime.now();
+    final todayStr = "${today.year}-${today.month}-${today.day}";
+
+    // Gunakan key berdasarkan course ID + tanggal hari ini
+    final key = 'reminder_${widget.course.id}_$todayStr';
+
+    final alreadyShown = prefs.getBool(key) ?? false;
+
+    if (alreadyShown) return; // Sudah ditampilkan hari ini untuk course ini
+
+    // Ambil data reminder dari Firestore
     final reminderSnapshot =
         await FirebaseFirestore.instance.collection('reminders').get();
+
     final imageUrls = reminderSnapshot.docs
         .map((doc) => (doc.data() as Map<String, dynamic>)['imageUrl'] ?? '')
         .where((url) => url.isNotEmpty)
         .toList();
 
-    if (imageUrls.isNotEmpty) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          contentPadding: EdgeInsets.zero,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                children: [
-                  CarouselSlider(
-                    options: CarouselOptions(
-                      height: 500,
-                      autoPlay: true,
-                      enlargeCenterPage: true,
-                      viewportFraction: 1.0, // Ambil lebar penuh
-                      aspectRatio:
-                          16 / 9, // Atur rasio aspek agar gambar proporsional
-                    ),
-                    items: imageUrls.map((imageUrl) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          imageUrl,
-                          width: double.infinity, // Lebar penuh
-                          fit: BoxFit.fill, // Isi penuh tanpa distorsi
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.broken_image,
-                              size: 100,
-                              color: Colors.grey,
-                            ),
+    if (imageUrls.isEmpty) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        contentPadding: EdgeInsets.zero,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              children: [
+                CarouselSlider(
+                  options: CarouselOptions(
+                    height: 500,
+                    autoPlay: true,
+                    enlargeCenterPage: true,
+                    viewportFraction: 1.0,
+                    aspectRatio: 16 / 9,
+                  ),
+                  items: imageUrls.map((imageUrl) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        imageUrl,
+                        width: double.infinity,
+                        fit: BoxFit.fill,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.broken_image,
+                            size: 100,
+                            color: Colors.grey,
                           ),
                         ),
-                      );
-                    }).toList(),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                Positioned(
+                  top: 5,
+                  right: 5,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.black),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
-      );
-    }
+      ),
+    );
+
+    // Simpan status bahwa popup sudah ditampilkan untuk course ini hari ini
+    await prefs.setBool(key, true);
   }
 
   @override

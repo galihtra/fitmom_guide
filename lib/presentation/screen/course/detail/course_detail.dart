@@ -10,8 +10,15 @@ import '../../../../data/services/lesson/lesson_service.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final Course course;
+  final bool useAffirmation;
+  final String affirmationMessage;
 
-  const CourseDetailScreen({super.key, required this.course});
+  const CourseDetailScreen({
+    super.key,
+    required this.course,
+    this.useAffirmation = false,
+    this.affirmationMessage = '',
+  });
 
   @override
   State<CourseDetailScreen> createState() => _CourseDetailScreenState();
@@ -25,6 +32,72 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   void initState() {
     super.initState();
     _showReminderPopup();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.useAffirmation && widget.affirmationMessage.isNotEmpty) {
+        _showAffirmationPopup(widget.affirmationMessage);
+      }
+    });
+  }
+
+  void _showAffirmationPopup(String message) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final userName = user?.displayName ?? 'Kamu';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.favorite, size: 60, color: Colors.pink),
+                const SizedBox(height: 16),
+                Text(
+                  "Afirmasi untukmu, $userName!",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.pink,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.check, color: Colors.white),
+                  label: const Text("Lanjutkan",
+                      style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.pink,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _showReminderPopup() async {

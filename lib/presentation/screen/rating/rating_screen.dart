@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../../../../data/model/lesson/lesson.dart';
+import '../../../data/model/course/course.dart';
 import '../../../data/model/lesson/lesson_review.dart';
 import '../../../data/services/lesson/lesson_service.dart';
+import '../course/detail/course_detail.dart';
 
 class RatingScreen extends StatefulWidget {
   final String courseId;
@@ -39,6 +42,21 @@ class _RatingScreenState extends State<RatingScreen> {
     }
   }
 
+  Future<Course?> _fetchCourse() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('courses')
+        .doc(widget.courseId)
+        .get();
+
+    if (doc.exists) {
+      final data = doc.data()!;
+      return Course.fromMap(
+          data, doc.id); // Pastikan ada Course.fromMap(map, id)
+    }
+
+    return null;
+  }
+
   /// Simpan review ke Firestore dan tampilkan popup
   void _submitRating() async {
     await _lessonService.submitReview(
@@ -49,7 +67,7 @@ class _RatingScreenState extends State<RatingScreen> {
       _reviewController.text,
     );
 
-     await _lessonService.addUserPoints(widget.userId, 5);
+    await _lessonService.addUserPoints(widget.userId, 5);
 
     _showCongratulationsPopup(); // ✅ Tampilkan popup setelah submit
   }
@@ -84,9 +102,23 @@ class _RatingScreenState extends State<RatingScreen> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(context); // Tutup popup
-                    Navigator.popUntil(context, (route) => route.isFirst);
+
+                    final course = await _fetchCourse();
+                    if (course != null && context.mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CourseDetailScreen(
+                            course: course,
+                            affirmationMessage:
+                                widget.lesson.affirmationMessage,
+                            useAffirmation: widget.lesson.useAffirmation,
+                          ),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,

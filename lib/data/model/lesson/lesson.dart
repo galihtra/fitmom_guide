@@ -10,6 +10,8 @@ class Lesson {
   String ulasanPengguna;
   double rating;
   int index;
+  bool useAffirmation; // New field
+  String affirmationMessage; // New field
 
   Lesson({
     required this.id,
@@ -23,6 +25,8 @@ class Lesson {
     required this.ulasanPengguna,
     required this.rating,
     required this.index,
+    this.useAffirmation = false, // Default to false
+    this.affirmationMessage = '', // Default empty
   });
 
   factory Lesson.fromMap(Map<String, dynamic> map, String id) {
@@ -38,6 +42,8 @@ class Lesson {
       ulasanPengguna: map['ulasan_pengguna'] ?? '',
       rating: (map['rating'] ?? 0).toDouble(),
       index: map['index'] ?? 0,
+      useAffirmation: map['use_affirmation'] ?? false,
+      affirmationMessage: map['affirmation_message'] ?? '',
     );
   }
 
@@ -51,8 +57,10 @@ class Lesson {
       'is_completed': isCompleted,
       'commentar': commentar,
       'ulasan_pengguna': ulasanPengguna,
-      'index': index, 
+      'index': index,
       'rating': rating,
+      'use_affirmation': useAffirmation,
+      'affirmation_message': affirmationMessage,
     };
   }
 }

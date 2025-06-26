@@ -5,7 +5,7 @@ class TwibbonCardWidget extends StatelessWidget {
   const TwibbonCardWidget({super.key});
 
   final String _twibbonUrl =
-      'https://twibbon.example.com'; // Ganti URL sesuai kebutuhan
+      'https://www.twibbonize.com/strongcore'; // Ganti URL sesuai kebutuhan
 
   Future<void> _launchTwibbon() async {
     final Uri url = Uri.parse(_twibbonUrl);

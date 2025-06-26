@@ -76,20 +76,17 @@ class _CourseListScreenState extends State<CourseListScreen> {
 
           final allCourses = snapshot.data ?? [];
 
-          final freeCourses = allCourses
-              .where((c) => c.isAvailable && c.members.isEmpty)
-              .toList();
+          final freeCourses =
+              allCourses.where((c) => c.isAvailable && c.isFree).toList();
 
           final unlockedCourses = allCourses
-              .where((course) =>
-                  course.members.contains(userId) &&
-                  !(course.isAvailable && course.members.isEmpty))
+              .where(
+                  (course) => course.members.contains(userId) && !course.isFree)
               .toList();
 
           final lockedCourses = allCourses
               .where((course) =>
-                  !course.members.contains(userId) &&
-                  !(course.isAvailable && course.members.isEmpty))
+                  !course.members.contains(userId) && !course.isFree)
               .toList();
 
           if (_sortedCourses.isEmpty) {
@@ -188,8 +185,8 @@ class _CourseListScreenState extends State<CourseListScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(top: 16),
                   children: _sortedCourses.map((course) {
-                    final bool isFree =
-                        course.isAvailable && course.members.isEmpty;
+                    final bool isFree = course.isAvailable &&
+                        course.isFree; // Perubahan di sini
                     final bool hasAccess =
                         course.members.contains(userId) || isFree;
 

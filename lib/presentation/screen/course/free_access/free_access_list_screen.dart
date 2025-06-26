@@ -46,8 +46,9 @@ class _FreeAccessListScreenState extends State<FreeAccessListScreen> {
           }
 
           final courses = snapshot.data ?? [];
-          final freeCourses = courses.where((course) => 
-              course.isAvailable && course.members.isEmpty).toList();
+          final freeCourses = courses
+              .where((course) => course.isAvailable && course.isFree)
+              .toList();
 
           if (freeCourses.isEmpty) {
             return const Center(
@@ -79,7 +80,7 @@ class _FreeAccessListScreenState extends State<FreeAccessListScreen> {
 
                     final lessons = lessonSnapshot.data ?? [];
                     final totalLessons = lessons.length;
-                    final completedLessons = 
+                    final completedLessons =
                         lessons.where((lesson) => lesson.isCompleted).length;
                     final double progress = totalLessons > 0
                         ? (completedLessons / totalLessons).clamp(0.0, 1.0)
@@ -97,7 +98,8 @@ class _FreeAccessListScreenState extends State<FreeAccessListScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CourseDetailScreen(course: course),
+                              builder: (context) =>
+                                  CourseDetailScreen(course: course),
                             ),
                           );
                         },
@@ -117,7 +119,7 @@ class _FreeAccessListScreenState extends State<FreeAccessListScreen> {
                                           width: double.infinity,
                                           height: 150,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => 
+                                          errorBuilder: (_, __, ___) =>
                                               _buildPlaceholderImage(),
                                         )
                                       : _buildPlaceholderImage(),

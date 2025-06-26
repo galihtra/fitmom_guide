@@ -5,6 +5,7 @@ class Course {
   String image;
   bool isAvailable;
   bool isFinished;
+  final bool isFree;
   List<String> members; // List user ID yang memiliki akses ke course
 
   Course({
@@ -14,6 +15,7 @@ class Course {
     required this.image,
     required this.isAvailable,
     required this.isFinished,
+     required this.isFree,
     required this.members,
   });
 
@@ -25,6 +27,7 @@ class Course {
       image: map['image'] ?? '',
       isAvailable: map['isAvailable'] ?? false,
       isFinished: map['isFinished'] ?? false,
+      isFree: map['isFree'] ?? false,
       members: List<String>.from(map['members'] ?? []), // Ambil daftar member dari Firestore
     );
   }
@@ -36,6 +39,7 @@ class Course {
       'image': image,
       'isAvailable': isAvailable,
       'isFinished': isFinished,
+      'isFree': isFree,
       'members': members, // Simpan daftar member
     };
   }

@@ -217,9 +217,9 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.lesson.name,
+                  Text(widget.lesson.description,
                       style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.bold)),
+                          fontSize: 14, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
                   const Text("Putar Musik", style: TextStyle(fontSize: 16)),
                   StreamBuilder(

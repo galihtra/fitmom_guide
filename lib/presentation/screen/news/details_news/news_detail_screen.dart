@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http; // Untuk download gambar
-import 'package:path_provider/path_provider.dart'; // Untuk akses direktori sementara
-import 'package:share_plus/share_plus.dart'; // Untuk share teks dan gambar
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:photo_view/photo_view.dart'; // Add this import
 
+import '../../../../core/utils/my_color.dart';
 import '../../../../data/model/news/news_model.dart';
 
 class NewsDetailScreen extends StatelessWidget {
@@ -13,23 +15,48 @@ class NewsDetailScreen extends StatelessWidget {
 
   Future<void> _shareNews(BuildContext context) async {
     try {
-      // Download gambar dari URL
       final response = await http.get(Uri.parse(news.imageUrl));
       final bytes = response.bodyBytes;
 
-      // Simpan gambar ke direktori sementara
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/news_image.jpg');
       await file.writeAsBytes(bytes);
 
-      // Share gambar dan teks berita
-      Share.shareFiles([file.path], text: '${news.title}\n\n${news.content}\n\nBaca Selengkapnya di Aplikasi Fitmom Guide!');
+      Share.shareFiles([file.path],
+          text:
+              '${news.title}\n\n${news.content}\n\nBaca Selengkapnya di Aplikasi Fitmom Guide!');
     } catch (e) {
-      // Tampilkan error jika terjadi kesalahan saat download atau share
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to share news: $e')),
       );
     }
+  }
+
+  void _showFullScreenImage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          body: Center(
+            child: PhotoView(
+              imageProvider: NetworkImage(news.imageUrl),
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 2,
+              backgroundDecoration: BoxDecoration(color: Colors.black),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -44,6 +71,15 @@ class NewsDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.share),
           ),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [MyColor.primaryColor, MyColor.secondaryColor],
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -51,22 +87,78 @@ class NewsDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  news.imageUrl,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: 200,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 200,
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+              // Enhanced Image Section
+              GestureDetector(
+                onTap: () => _showFullScreenImage(context),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          news.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 220,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: 220,
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                            height: 220,
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: Icon(Icons.broken_image,
+                                  size: 50, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.fullscreen,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
               const SizedBox(height: 16),
               Text(
                 news.title,

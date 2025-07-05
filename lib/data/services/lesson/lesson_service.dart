@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../model/lesson/lesson.dart';
+import '../../model/lesson/lesson_folder.dart';
 import '../../model/lesson/lesson_review.dart';
 
 class LessonService {
@@ -160,5 +161,16 @@ Future<void> submitReview(String courseId, String lessonId, String userId,
       int currentPoints = snapshot.get('points') ?? 0;
       transaction.update(userRef, {'points': currentPoints + points});
     });
+  }
+
+  Stream<List<LessonFolder>> getFolders(String courseId) {
+    return _firestore
+        .collection('courses')
+        .doc(courseId)
+        .collection('folders')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => LessonFolder.fromMap(doc.data(), doc.id))
+            .toList());
   }
 }

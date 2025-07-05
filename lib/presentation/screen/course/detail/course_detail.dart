@@ -1,13 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahkan ini untuk akses Firestore
-import 'package:fitmom_guide/presentation/screen/lesson/preview/preview_lesson.dart';
-import 'package:carousel_slider/carousel_slider.dart'; // Carousel Slider untuk slider gambar
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fitmom_guide/core/utils/my_color.dart';
+import 'package:fitmom_guide/presentation/screen/lesson/preview/preview_lesson.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../data/model/course/course.dart';
 import '../../../../data/model/lesson/lesson.dart';
+import '../../../../data/model/lesson/lesson_folder.dart';
 import '../../../../data/services/lesson/lesson_service.dart';
 import '../../dashboard/dashboard_screen.dart';
+import '../../lesson/folder/folder_detail_screen.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final Course course;
@@ -27,27 +30,75 @@ class CourseDetailScreen extends StatefulWidget {
 
 class _CourseDetailScreenState extends State<CourseDetailScreen> {
   final LessonService _lessonService = LessonService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  final Map<String, bool> _folderExpansionStates = {};
+  bool _hasShownAffirmation = false;
 
   @override
   void initState() {
     super.initState();
     _showReminderPopup();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.useAffirmation && widget.affirmationMessage.isNotEmpty) {
-        _showAffirmationPopup(widget.affirmationMessage);
+  }
+
+  Future<bool> _isFolderComplete(String folderId, String folderName) async {
+    // Handle special case for root lessons
+    if (folderName.isEmpty) {
+      final lessons =
+          await _lessonService.getLessons(widget.course.id, userId).first;
+      final rootLessons = lessons
+          .where((lesson) =>
+              lesson.folderName == null || lesson.folderName!.isEmpty)
+          .toList();
+
+      // Return true only if there are lessons AND all are completed
+      return rootLessons.isNotEmpty &&
+          rootLessons.every((lesson) => lesson.isCompleted);
+    }
+
+    // Original logic for folders
+    final lessons =
+        await _lessonService.getLessons(widget.course.id, userId).first;
+    final folderLessons =
+        lessons.where((lesson) => lesson.folderName == folderName).toList();
+
+    // Return false if no lessons or any incomplete
+    if (folderLessons.isEmpty ||
+        folderLessons.any((lesson) => !lesson.isCompleted)) {
+      return false;
+    }
+
+    // Check subfolders
+    final subFolders = await _firestore
+        .collection('courses')
+        .doc(widget.course.id)
+        .collection('folders')
+        .where('parent_folder_name', isEqualTo: folderName)
+        .get();
+
+    for (final subFolderDoc in subFolders.docs) {
+      final subFolder =
+          LessonFolder.fromMap(subFolderDoc.data(), subFolderDoc.id);
+      final isSubFolderComplete =
+          await _isFolderComplete(subFolderDoc.id, subFolder.name);
+      if (!isSubFolderComplete) {
+        return false;
       }
-    });
+    }
+
+    return true;
   }
 
   void _showAffirmationPopup(String message) async {
+    if (_hasShownAffirmation) return;
+
     final user = FirebaseAuth.instance.currentUser;
     final userId = user?.uid ?? '';
 
-    // Ambil nama dari Firestore
-    final doc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final doc = await _firestore.collection('users').doc(userId).get();
     String userName = (doc.data()?['name'] ?? 'Kamu').toString().trim();
+
+    _hasShownAffirmation = true;
 
     showDialog(
       context: context,
@@ -63,7 +114,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.favorite, size: 60, color: Colors.pink),
+                const Icon(Icons.favorite,
+                    size: 60, color: MyColor.primaryColor),
                 const SizedBox(height: 16),
                 Text(
                   "Afirmasi untukmu, $userName!",
@@ -71,7 +123,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.pink,
+                    color: MyColor.primaryColor,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -90,7 +142,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   label: const Text("Lanjutkan",
                       style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pink,
+                    backgroundColor: MyColor.primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -108,20 +160,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
   Future<void> _showReminderPopup() async {
     final prefs = await SharedPreferences.getInstance();
-
     final today = DateTime.now();
     final todayStr = "${today.year}-${today.month}-${today.day}";
-
-    // Gunakan key berdasarkan course ID + tanggal hari ini
     final key = 'reminder_${widget.course.id}_$todayStr';
-
     final alreadyShown = prefs.getBool(key) ?? false;
 
-    if (alreadyShown) return; // Sudah ditampilkan hari ini untuk course ini
+    if (alreadyShown) return;
 
-    // Ambil data reminder dari Firestore
-    final reminderSnapshot =
-        await FirebaseFirestore.instance.collection('reminders').get();
+    final reminderSnapshot = await _firestore.collection('reminders').get();
 
     final imageUrls = reminderSnapshot.docs
         .map((doc) => (doc.data() as Map<String, dynamic>)['imageUrl'] ?? '')
@@ -134,6 +180,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: EdgeInsets.zero,
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -154,7 +201,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       child: Image.network(
                         imageUrl,
                         width: double.infinity,
-                        fit: BoxFit.fill,
+                        fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           color: Colors.grey[300],
                           child: const Icon(
@@ -168,11 +215,16 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   }).toList(),
                 ),
                 Positioned(
-                  top: 5,
-                  right: 5,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.black),
-                    onPressed: () => Navigator.of(context).pop(),
+                  top: 10,
+                  right: 10,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    radius: 18,
+                    child: IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 18),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                   ),
                 ),
               ],
@@ -182,7 +234,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       ),
     );
 
-    // Simpan status bahwa popup sudah ditampilkan untuk course ini hari ini
     await prefs.setBool(key, true);
   }
 
@@ -194,116 +245,459 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           context,
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
-        return false; // cegah back default
+        return false;
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFFFF0F3),
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text(widget.course.name),
-          backgroundColor: const Color(0xFFFFF0F3),
+          title: Text(
+            widget.course.name,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          centerTitle: true,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [MyColor.primaryColor, MyColor.secondaryColor],
+              ),
+            ),
+          ),
+          iconTheme: IconThemeData(color: Colors.white),
         ),
         body: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              widget.course.image.isNotEmpty
-                  ? Image.network(widget.course.image,
-                      width: double.infinity, height: 200, fit: BoxFit.cover)
-                  : Container(
-                      width: double.infinity,
-                      height: 200,
-                      color: Colors.grey[300],
-                      child:
-                          Icon(Icons.image, size: 100, color: Colors.grey[600]),
-                    ),
+              // Hero Image Section
+              Hero(
+                tag: 'course-${widget.course.id}',
+                child: Container(
+                  height: 220,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: widget.course.image.isNotEmpty
+                      ? ClipRRect(
+                          child: Image.network(
+                            widget.course.image,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Container(
+                          color: Colors.grey[200],
+                          child: Center(
+                            child: Icon(
+                              Icons.fitness_center,
+                              size: 60,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+
+              // Course Info Section
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.course.name,
-                        style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    Text(widget.course.description,
-                        style: TextStyle(fontSize: 16)),
-                    const SizedBox(height: 20),
-                    const Text("Latihan",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      widget.course.name,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      widget.course.description,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    Text(
+                      "FOLDER LATIHAN",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: MyColor.primaryColor,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    Divider(
+                      color: Colors.grey[300],
+                      thickness: 1,
+                      height: 24,
+                    ),
                   ],
                 ),
               ),
-              StreamBuilder<List<Lesson>>(
-                stream: _lessonService.getLessons(widget.course.id, userId),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError)
-                    return Center(child: Text('Error loading lessons'));
-                  if (!snapshot.hasData)
-                    return Center(child: CircularProgressIndicator());
 
-                  final lessons = snapshot.data!
-                    ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+              // Main Folders Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: StreamBuilder<List<LessonFolder>>(
+                  stream: _lessonService.getFolders(widget.course.id),
+                  builder: (context, folderSnapshot) {
+                    if (folderSnapshot.hasError) {
+                      return _buildErrorWidget('Gagal memuat folder');
+                    }
 
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: lessons.length,
-                    itemBuilder: (context, index) {
-                      final lesson = lessons[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        child: ListTile(
-                          leading: lesson.image.isNotEmpty
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    lesson.image,
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : Container(
-                                  width: 60,
-                                  height: 60,
-                                  color: Colors.grey[300],
-                                  child: Icon(Icons.image,
-                                      size: 40, color: Colors.grey[600]),
-                                ),
-                          title: Text(lesson.name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(lesson.description,
-                              maxLines: 2, overflow: TextOverflow.ellipsis),
-                          trailing: lesson.isCompleted
-                              ? const Icon(Icons.check_circle,
-                                  color: Colors.green)
-                              : const Icon(Icons.radio_button_unchecked,
-                                  color: Colors.grey),
-                          onTap: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    PreviewLessonScreen(lesson: lesson),
-                              ),
-                            );
+                    if (!folderSnapshot.hasData) {
+                      return _buildLoadingWidget();
+                    }
 
-                            setState(() {});
-                          },
-                        ),
-                      );
-                    },
-                  );
-                },
+                    // Filter only main folders (without parent folders)
+                    final mainFolders = folderSnapshot.data!
+                        .where((folder) =>
+                            folder.parentFolderName == null ||
+                            folder.parentFolderName!.isEmpty)
+                        .toList()
+                      ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+
+                    return Column(
+                      children: [
+                        // Main Folders
+                        ...mainFolders.map((folder) {
+                          return FutureBuilder<bool>(
+                            future: _isFolderComplete(folder.id, folder.name),
+                            builder: (context, completionSnapshot) {
+                              final isComplete =
+                                  completionSnapshot.data ?? false;
+                              return _buildMainFolderCard(folder, isComplete);
+                            },
+                          );
+                        }).toList(),
+
+                        // Lessons without folder
+                        _buildLessonsWithoutFolder(),
+                      ],
+                    );
+                  },
+                ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 30),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainFolderCard(LessonFolder folder, bool isComplete) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 2,
+      shadowColor: MyColor.primaryColor.withOpacity(0.1),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FolderDetailScreen(
+                courseId: widget.course.id,
+                folder: folder,
+              ),
+            ),
+          );
+
+          if (widget.useAffirmation &&
+              widget.affirmationMessage.isNotEmpty &&
+              result == true) {
+            _showAffirmationPopup(widget.affirmationMessage);
+          }
+          setState(() {});
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      MyColor.primaryColor.withOpacity(0.8),
+                      MyColor.secondaryColor.withOpacity(0.8),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isComplete ? Icons.folder_open : Icons.folder,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      folder.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    StreamBuilder<List<Lesson>>(
+                      stream:
+                          _lessonService.getLessons(widget.course.id, userId),
+                      builder: (context, lessonSnapshot) {
+                        if (!lessonSnapshot.hasData) {
+                          return Text(
+                            'Memuat materi...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                          );
+                        }
+
+                        final lessonCount = lessonSnapshot.data!
+                            .where((lesson) => lesson.folderName == folder.name)
+                            .length;
+
+                        return Text(
+                          '$lessonCount ${lessonCount == 1 ? 'materi' : 'materi'}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                isComplete ? Icons.check_circle : Icons.chevron_right,
+                color: isComplete ? MyColor.primaryColor : Colors.grey[400],
+                size: 28,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLessonsWithoutFolder() {
+    return StreamBuilder<List<Lesson>>(
+      stream: _lessonService.getLessons(widget.course.id, userId),
+      builder: (context, lessonSnapshot) {
+        if (lessonSnapshot.hasError) {
+          return _buildErrorWidget('Gagal memuat materi');
+        }
+
+        if (!lessonSnapshot.hasData) {
+          return _buildLoadingWidget();
+        }
+
+        final lessons = lessonSnapshot.data!
+          ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+
+        final rootLessons = lessons
+            .where((lesson) =>
+                lesson.folderName == null || lesson.folderName!.isEmpty)
+            .toList();
+
+        if (rootLessons.isEmpty) {
+          return SizedBox();
+        }
+
+        // Hitung jumlah materi yang sudah selesai
+        final completedCount = rootLessons.where((l) => l.isCompleted).length;
+        final allCompleted = completedCount == rootLessons.length;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Text(
+                  "Program Latihan",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[600],
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                Spacer(),
+                if (rootLessons.isNotEmpty)
+                  Text(
+                    '$completedCount/${rootLessons.length} selesai',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 12),
+            ...rootLessons.map((lesson) {
+              return Card(
+                margin: EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+                shadowColor: MyColor.primaryColor.withOpacity(0.1),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            PreviewLessonScreen(lesson: lesson),
+                      ),
+                    );
+
+                    if (widget.useAffirmation &&
+                        widget.affirmationMessage.isNotEmpty &&
+                        result == true) {
+                      _showAffirmationPopup(widget.affirmationMessage);
+                    }
+                    setState(() {});
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.grey[100],
+                            image: lesson.image.isNotEmpty
+                                ? DecorationImage(
+                                    image: NetworkImage(lesson.image),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: lesson.image.isEmpty
+                              ? Center(
+                                  child: Icon(
+                                    Icons.play_circle_fill,
+                                    size: 30,
+                                    color: MyColor.primaryColor,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                lesson.name,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                lesson.description,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Hanya tampilkan centang jika materi ini selesai
+                        lesson.isCompleted
+                            ? Icon(
+                                Icons.check_circle,
+                                color: allCompleted
+                                    ? MyColor.primaryColor
+                                    : Colors.grey[400],
+                              )
+                            : Icon(
+                                Icons.radio_button_unchecked,
+                                color: Colors.grey[400],
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingWidget() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(MyColor.primaryColor),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget(String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: Colors.red[400],
+              size: 40,
+            ),
+            SizedBox(height: 8),
+            Text(
+              message,
+              style: TextStyle(
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         ),
       ),
     );

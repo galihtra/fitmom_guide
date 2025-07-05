@@ -12,6 +12,7 @@ class Lesson {
   int index;
   bool useAffirmation; // New field
   String affirmationMessage; // New field
+  final String? folderName;
 
   Lesson({
     required this.id,
@@ -27,6 +28,7 @@ class Lesson {
     required this.index,
     this.useAffirmation = false, // Default to false
     this.affirmationMessage = '', // Default empty
+    this.folderName,
   });
 
   factory Lesson.fromMap(Map<String, dynamic> map, String id) {
@@ -44,6 +46,7 @@ class Lesson {
       index: map['index'] ?? 0,
       useAffirmation: map['use_affirmation'] ?? false,
       affirmationMessage: map['affirmation_message'] ?? '',
+      folderName: map['folder_name'] ?? '',
     );
   }
 
@@ -60,7 +63,7 @@ class Lesson {
       'index': index,
       'rating': rating,
       'use_affirmation': useAffirmation,
-      'affirmation_message': affirmationMessage,
+      'folder_name': folderName,
     };
   }
 }

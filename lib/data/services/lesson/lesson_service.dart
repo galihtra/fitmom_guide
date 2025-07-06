@@ -104,30 +104,48 @@ class LessonService {
     }
   }
 
-  /// Simpan rating & ulasan user
-Future<void> submitReview(String courseId, String lessonId, String userId,
-    double rating, String comment) async {
-  try {
-    await _firestore
+  Future<void> resetAllLessonProgress(String courseId, String userId) async {
+    final lessonsSnapshot = await _firestore
         .collection('courses')
         .doc(courseId)
         .collection('lessons')
-        .doc(lessonId)
-        .collection('lesson_reviews')
-        .doc(userId)
-        .set({
-      'userId': userId, // ✅ Simpan userId
-      'rating': rating,
-      'comment': comment,
-      'timestamp': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+        .get();
 
-    print("✅ Review berhasil disimpan untuk userId: $userId");
-  } catch (e) {
-    throw Exception("Failed to submit review: $e");
+    final batch = _firestore.batch();
+
+    for (final lessonDoc in lessonsSnapshot.docs) {
+      final progressRef =
+          lessonDoc.reference.collection('lesson_progress').doc(userId);
+
+      batch.set(progressRef, {'isCompleted': false}, SetOptions(merge: true));
+    }
+
+    await batch.commit();
   }
-}
 
+  /// Simpan rating & ulasan user
+  Future<void> submitReview(String courseId, String lessonId, String userId,
+      double rating, String comment) async {
+    try {
+      await _firestore
+          .collection('courses')
+          .doc(courseId)
+          .collection('lessons')
+          .doc(lessonId)
+          .collection('lesson_reviews')
+          .doc(userId)
+          .set({
+        'userId': userId, // ✅ Simpan userId
+        'rating': rating,
+        'comment': comment,
+        'timestamp': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      print("✅ Review berhasil disimpan untuk userId: $userId");
+    } catch (e) {
+      throw Exception("Failed to submit review: $e");
+    }
+  }
 
   /// Ambil rating & ulasan user
   Future<LessonReview?> getReview(

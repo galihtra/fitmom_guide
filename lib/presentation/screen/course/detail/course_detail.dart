@@ -11,6 +11,11 @@ import '../../../../data/model/lesson/lesson_folder.dart';
 import '../../../../data/services/lesson/lesson_service.dart';
 import '../../dashboard/dashboard_screen.dart';
 import '../../lesson/folder/folder_detail_screen.dart';
+import '../widget/error_widget.dart';
+import '../widget/fullscreen_image_view.dart';
+import '../widget/lessons_without_folder.dart';
+import '../widget/loading_widget.dart';
+import '../widget/main_folder_card.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final Course course;
@@ -34,6 +39,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   final Map<String, bool> _folderExpansionStates = {};
   bool _hasShownAffirmation = false;
+  bool _isResetting = false;
 
   @override
   void initState() {
@@ -42,7 +48,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   }
 
   Future<bool> _isFolderComplete(String folderId, String folderName) async {
-    // Handle special case for root lessons
     if (folderName.isEmpty) {
       final lessons =
           await _lessonService.getLessons(widget.course.id, userId).first;
@@ -50,25 +55,20 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           .where((lesson) =>
               lesson.folderName == null || lesson.folderName!.isEmpty)
           .toList();
-
-      // Return true only if there are lessons AND all are completed
       return rootLessons.isNotEmpty &&
           rootLessons.every((lesson) => lesson.isCompleted);
     }
 
-    // Original logic for folders
     final lessons =
         await _lessonService.getLessons(widget.course.id, userId).first;
     final folderLessons =
         lessons.where((lesson) => lesson.folderName == folderName).toList();
 
-    // Return false if no lessons or any incomplete
     if (folderLessons.isEmpty ||
         folderLessons.any((lesson) => !lesson.isCompleted)) {
       return false;
     }
 
-    // Check subfolders
     final subFolders = await _firestore
         .collection('courses')
         .doc(widget.course.id)
@@ -87,6 +87,56 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     }
 
     return true;
+  }
+
+  Future<void> _showResetConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Progress Latihan'),
+        content: const Text(
+            'Apakah Anda yakin ingin mereset semua progress latihan di kursus ini? '
+            'Tindakan ini tidak dapat dibatalkan.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Batal', style: TextStyle(color: Colors.grey[600])),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'Reset',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _resetCourseProgress();
+    }
+  }
+
+  Future<void> _resetCourseProgress() async {
+    if (_isResetting) return;
+
+    setState(() => _isResetting = true);
+
+    try {
+      await _lessonService.resetAllLessonProgress(widget.course.id, userId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Progress latihan berhasil direset')),
+      );
+      setState(() {}); // Untuk me-refresh tampilan
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal mereset progress')),
+      );
+    } finally {
+      setState(() => _isResetting = false);
+    }
   }
 
   void _showAffirmationPopup(String message) async {
@@ -250,14 +300,64 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text(
-            widget.course.name,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          title: StreamBuilder<List<Lesson>>(
+            stream: _lessonService.getLessons(widget.course.id, userId),
+            builder: (context, snapshot) {
+              final hasCompletedLessons =
+                  snapshot.data?.any((l) => l.isCompleted) ?? false;
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.course.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (hasCompletedLessons)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: _showResetConfirmation,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.5),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.restart_alt,
+                                  size: 18, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'Reset',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
-          centerTitle: true,
+          centerTitle: false,
           elevation: 0,
           flexibleSpace: Container(
             decoration: BoxDecoration(
@@ -268,48 +368,73 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               ),
             ),
           ),
-          iconTheme: IconThemeData(color: Colors.white),
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Hero Image Section
               Hero(
-                tag: 'course-${widget.course.id}',
-                child: Container(
-                  height: 220,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
+                tag: widget.course.image,
+                child: Stack(
+                  children: [
+                    Container(
+                      height: 220,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: widget.course.image.isNotEmpty
-                      ? ClipRRect(
-                          child: Image.network(
-                            widget.course.image,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Container(
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: Icon(
-                              Icons.fitness_center,
-                              size: 60,
-                              color: Colors.grey[400],
+                      child: widget.course.image.isNotEmpty
+                          ? ClipRRect(
+                              child: Image.network(
+                                widget.course.image,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            )
+                          : Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: Icon(
+                                  Icons.fitness_center,
+                                  size: 60,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
                             ),
-                          ),
+                    ),
+                    // 🔽 Tombol di pojok kanan bawah
+                    Positioned(
+                      bottom: 12,
+                      right: 12,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.black.withOpacity(0.5),
+                        radius: 20,
+                        child: IconButton(
+                          icon: const Icon(Icons.fullscreen,
+                              color: Colors.white, size: 20),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FullscreenImageView(
+                                  imageUrl: widget.course.image,
+                                ),
+                              ),
+                            );
+                          },
                         ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
-              // Course Info Section
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -323,7 +448,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                         color: Colors.grey[800],
                       ),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Text(
                       widget.course.description,
                       style: TextStyle(
@@ -332,7 +457,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                         height: 1.4,
                       ),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     Text(
                       "FOLDER LATIHAN",
                       style: TextStyle(
@@ -350,22 +475,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   ],
                 ),
               ),
-
-              // Main Folders Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: StreamBuilder<List<LessonFolder>>(
                   stream: _lessonService.getFolders(widget.course.id),
                   builder: (context, folderSnapshot) {
                     if (folderSnapshot.hasError) {
-                      return _buildErrorWidget('Gagal memuat folder');
+                      return const ErrorView(message: 'Gagal memuat data');
                     }
 
                     if (!folderSnapshot.hasData) {
-                      return _buildLoadingWidget();
+                      return const LoadingView();
                     }
 
-                    // Filter only main folders (without parent folders)
                     final mainFolders = folderSnapshot.data!
                         .where((folder) =>
                             folder.parentFolderName == null ||
@@ -375,329 +497,41 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
                     return Column(
                       children: [
-                        // Main Folders
                         ...mainFolders.map((folder) {
                           return FutureBuilder<bool>(
                             future: _isFolderComplete(folder.id, folder.name),
                             builder: (context, completionSnapshot) {
                               final isComplete =
                                   completionSnapshot.data ?? false;
-                              return _buildMainFolderCard(folder, isComplete);
+                              return MainFolderCard(
+                                folder: folder,
+                                isComplete: isComplete,
+                                courseId: widget.course.id,
+                                useAffirmation: widget.useAffirmation,
+                                affirmationMessage: widget.affirmationMessage,
+                                userId: userId,
+                                lessonService: _lessonService,
+                                onShowAffirmation: _showAffirmationPopup,
+                              );
                             },
                           );
                         }).toList(),
-
-                        // Lessons without folder
-                        _buildLessonsWithoutFolder(),
+                        LessonsWithoutFolderWidget(
+                          courseId: widget.course.id,
+                          userId: userId,
+                          lessonService: _lessonService,
+                          useAffirmation: widget.useAffirmation,
+                          affirmationMessage: widget.affirmationMessage,
+                          onShowAffirmation: _showAffirmationPopup,
+                        ),
                       ],
                     );
                   },
                 ),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainFolderCard(LessonFolder folder, bool isComplete) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      elevation: 2,
-      shadowColor: MyColor.primaryColor.withOpacity(0.1),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FolderDetailScreen(
-                courseId: widget.course.id,
-                folder: folder,
-              ),
-            ),
-          );
-
-          if (widget.useAffirmation &&
-              widget.affirmationMessage.isNotEmpty &&
-              result == true) {
-            _showAffirmationPopup(widget.affirmationMessage);
-          }
-          setState(() {});
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      MyColor.primaryColor.withOpacity(0.8),
-                      MyColor.secondaryColor.withOpacity(0.8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  isComplete ? Icons.folder_open : Icons.folder,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      folder.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    StreamBuilder<List<Lesson>>(
-                      stream:
-                          _lessonService.getLessons(widget.course.id, userId),
-                      builder: (context, lessonSnapshot) {
-                        if (!lessonSnapshot.hasData) {
-                          return Text(
-                            'Memuat materi...',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
-                          );
-                        }
-
-                        final lessonCount = lessonSnapshot.data!
-                            .where((lesson) => lesson.folderName == folder.name)
-                            .length;
-
-                        return Text(
-                          '$lessonCount ${lessonCount == 1 ? 'materi' : 'materi'}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                isComplete ? Icons.check_circle : Icons.chevron_right,
-                color: isComplete ? MyColor.primaryColor : Colors.grey[400],
-                size: 28,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLessonsWithoutFolder() {
-    return StreamBuilder<List<Lesson>>(
-      stream: _lessonService.getLessons(widget.course.id, userId),
-      builder: (context, lessonSnapshot) {
-        if (lessonSnapshot.hasError) {
-          return _buildErrorWidget('Gagal memuat materi');
-        }
-
-        if (!lessonSnapshot.hasData) {
-          return _buildLoadingWidget();
-        }
-
-        final lessons = lessonSnapshot.data!
-          ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
-
-        final rootLessons = lessons
-            .where((lesson) =>
-                lesson.folderName == null || lesson.folderName!.isEmpty)
-            .toList();
-
-        if (rootLessons.isEmpty) {
-          return SizedBox();
-        }
-
-        // Hitung jumlah materi yang sudah selesai
-        final completedCount = rootLessons.where((l) => l.isCompleted).length;
-        final allCompleted = completedCount == rootLessons.length;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Text(
-                  "Program Latihan",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[600],
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                Spacer(),
-                if (rootLessons.isNotEmpty)
-                  Text(
-                    '$completedCount/${rootLessons.length} selesai',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-              ],
-            ),
-            SizedBox(height: 12),
-            ...rootLessons.map((lesson) {
-              return Card(
-                margin: EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-                shadowColor: MyColor.primaryColor.withOpacity(0.1),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            PreviewLessonScreen(lesson: lesson),
-                      ),
-                    );
-
-                    if (widget.useAffirmation &&
-                        widget.affirmationMessage.isNotEmpty &&
-                        result == true) {
-                      _showAffirmationPopup(widget.affirmationMessage);
-                    }
-                    setState(() {});
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.grey[100],
-                            image: lesson.image.isNotEmpty
-                                ? DecorationImage(
-                                    image: NetworkImage(lesson.image),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                          ),
-                          child: lesson.image.isEmpty
-                              ? Center(
-                                  child: Icon(
-                                    Icons.play_circle_fill,
-                                    size: 30,
-                                    color: MyColor.primaryColor,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                lesson.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                lesson.description,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Hanya tampilkan centang jika materi ini selesai
-                        lesson.isCompleted
-                            ? Icon(
-                                Icons.check_circle,
-                                color: allCompleted
-                                    ? MyColor.primaryColor
-                                    : Colors.grey[400],
-                              )
-                            : Icon(
-                                Icons.radio_button_unchecked,
-                                color: Colors.grey[400],
-                              ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildLoadingWidget() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(MyColor.primaryColor),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget(String message) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.red[400],
-              size: 40,
-            ),
-            SizedBox(height: 8),
-            Text(
-              message,
-              style: TextStyle(
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
         ),
       ),
     );

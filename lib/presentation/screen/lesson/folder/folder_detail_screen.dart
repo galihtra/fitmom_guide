@@ -39,7 +39,12 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     final folderLessons =
         lessons.where((lesson) => lesson.folderName == folderName).toList();
 
-    // If any direct lesson is incomplete, return false
+    // Jika tidak ada materi sama sekali di folder ini, return false
+    if (folderLessons.isEmpty) {
+      return false;
+    }
+
+    // Jika ada materi yang belum selesai, return false
     if (folderLessons.any((lesson) => !lesson.isCompleted)) {
       return false;
     }

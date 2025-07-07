@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../data/model/lesson/lesson.dart';
+import '../../../core/utils/my_color.dart';
 import '../../../data/model/course/course.dart';
 import '../../../data/model/lesson/lesson_review.dart';
 import '../../../data/services/lesson/lesson_service.dart';
@@ -12,8 +14,11 @@ class RatingScreen extends StatefulWidget {
   final Lesson lesson;
   final String userId;
 
-  RatingScreen(
-      {required this.courseId, required this.lesson, required this.userId});
+  RatingScreen({
+    required this.courseId,
+    required this.lesson,
+    required this.userId,
+  });
 
   @override
   _RatingScreenState createState() => _RatingScreenState();
@@ -23,6 +28,8 @@ class _RatingScreenState extends State<RatingScreen> {
   double _rating = 0;
   TextEditingController _reviewController = TextEditingController();
   final LessonService _lessonService = LessonService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -30,7 +37,6 @@ class _RatingScreenState extends State<RatingScreen> {
     _fetchUserReview();
   }
 
-  /// Ambil data review user dari Firestore
   void _fetchUserReview() async {
     LessonReview? review = await _lessonService.getReview(
         widget.courseId, widget.lesson.id, widget.userId);
@@ -50,14 +56,12 @@ class _RatingScreenState extends State<RatingScreen> {
 
     if (doc.exists) {
       final data = doc.data()!;
-      return Course.fromMap(
-          data, doc.id); // Pastikan ada Course.fromMap(map, id)
+      return Course.fromMap(data, doc.id);
     }
 
     return null;
   }
 
-  /// Simpan review ke Firestore dan tampilkan popup
   void _submitRating() async {
     await _lessonService.submitReview(
       widget.courseId,
@@ -69,11 +73,22 @@ class _RatingScreenState extends State<RatingScreen> {
 
     await _lessonService.addUserPoints(widget.userId, 5);
 
-    _showCongratulationsPopup(); // ✅ Tampilkan popup setelah submit
+    _showCongratulationsPopup();
   }
 
-  /// ✅ Menampilkan popup bottom sheet "Congratulations"
-  void _showCongratulationsPopup() {
+  void _showCongratulationsPopup() async {
+    final user = _auth.currentUser;
+    final userId = user?.uid ?? '';
+    String userName = 'Kamu';
+
+    final doc = await _firestore.collection('users').doc(userId).get();
+    if (doc.exists && doc.data()?['name'] != null) {
+      userName = doc['name'];
+    }
+
+    final affirmation =
+        widget.lesson.useAffirmation ? widget.lesson.affirmationMessage : '';
+
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
@@ -82,17 +97,20 @@ class _RatingScreenState extends State<RatingScreen> {
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(20),
-          height: 350,
+          height: 400,
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.celebration,
-                    color: Colors.pink, size: 80), // 🎉 Ikon
+                const Icon(Icons.celebration, color: Colors.pink, size: 80),
                 const SizedBox(height: 15),
-                const Text(
-                  "Congratulations!",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                Text(
+                  "Congratulations, $userName!",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 const Text(
@@ -100,10 +118,22 @@ class _RatingScreenState extends State<RatingScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.black87),
                 ),
+                if (affirmation.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    affirmation,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.pinkAccent,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () async {
-                    Navigator.pop(context); // Tutup popup
+                    Navigator.pop(context);
 
                     final course = await _fetchCourse();
                     if (course != null && context.mounted) {

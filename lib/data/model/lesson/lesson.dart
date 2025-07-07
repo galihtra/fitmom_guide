@@ -66,6 +66,7 @@ class Lesson {
       'index': index,
       'rating': rating,
       'use_affirmation': useAffirmation,
+      'affirmation_message': affirmationMessage,
       'folder_name': folderName,
       'sound_enabled': soundEnabled,
     };

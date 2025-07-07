@@ -13,6 +13,7 @@ class Lesson {
   bool useAffirmation; // New field
   String affirmationMessage; // New field
   final String? folderName;
+  bool soundEnabled;
 
   Lesson({
     required this.id,
@@ -29,6 +30,7 @@ class Lesson {
     this.useAffirmation = false, // Default to false
     this.affirmationMessage = '', // Default empty
     this.folderName,
+    this.soundEnabled = true,
   });
 
   factory Lesson.fromMap(Map<String, dynamic> map, String id) {
@@ -47,6 +49,7 @@ class Lesson {
       useAffirmation: map['use_affirmation'] ?? false,
       affirmationMessage: map['affirmation_message'] ?? '',
       folderName: map['folder_name'] ?? '',
+      soundEnabled: map['sound_enabled'] ?? true,
     );
   }
 
@@ -64,6 +67,7 @@ class Lesson {
       'rating': rating,
       'use_affirmation': useAffirmation,
       'folder_name': folderName,
+      'sound_enabled': soundEnabled,
     };
   }
 }

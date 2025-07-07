@@ -44,13 +44,11 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   void _setupFullscreenListener() {
     _youtubeController?.addListener(() {
       if (_youtubeController!.value.isFullScreen) {
-        // Lock orientasi portrait saat fullscreen
         SystemChrome.setPreferredOrientations([
           DeviceOrientation.portraitUp,
           DeviceOrientation.portraitDown,
         ]);
       } else {
-        // Reset orientasi ke default
         SystemChrome.setPreferredOrientations(DeviceOrientation.values);
       }
     });
@@ -126,7 +124,6 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
       });
     } else {
       try {
-        // Konfigurasi audio session
         final session = await AudioSession.instance;
         await session.configure(const AudioSessionConfiguration(
           avAudioSessionCategory: AVAudioSessionCategory.playback,
@@ -137,8 +134,8 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               AVAudioSessionRouteSharingPolicy.defaultPolicy,
           androidAudioAttributes: AndroidAudioAttributes(
             usage: AndroidAudioUsage.media,
-            contentType: AndroidAudioContentType.music, // Diperbaiki di sini
-          ), // flags dihapus
+            contentType: AndroidAudioContentType.music,
+          ),
           androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
           androidWillPauseWhenDucked: true,
         ));
@@ -187,7 +184,6 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                 height: 630,
                 child: YoutubePlayerBuilder(
                   onExitFullScreen: () {
-                    // Pastikan orientasi kembali normal saat keluar fullscreen
                     SystemChrome.setPreferredOrientations(
                         DeviceOrientation.values);
                   },
@@ -221,69 +217,68 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  const Text("Putar Musik", style: TextStyle(fontSize: 16)),
-                  StreamBuilder(
-                    stream: _soundCollection.snapshots(),
-                    builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+                  
+                  // Only show sound section if sound is enabled
+                  if (widget.lesson.soundEnabled) ...[
+                    const Text("Putar Musik", style: TextStyle(fontSize: 16)),
+                    const SizedBox(height: 8),
+                    StreamBuilder(
+                      stream: _soundCollection.snapshots(),
+                      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
-                      var sounds = snapshot.data!.docs;
+                        var sounds = snapshot.data!.docs;
 
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero, // Hilangkan padding ListView
-                        itemCount: sounds.length,
-                        itemBuilder: (context, index) {
-                          var sound = sounds[index];
-                          String soundUrl = sound['url'];
-                          return ListTile(
-                            contentPadding:
-                                EdgeInsets.zero, // Hilangkan padding ListTile
-                            visualDensity: VisualDensity
-                                .compact, // Perkecil ukuran vertical
-                            title: Text(sound['name']),
-                            subtitle: _currentlyPlaying == soundUrl
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      LinearProgressIndicator(
-                                        value: _totalDuration.inMilliseconds > 0
-                                            ? _currentPosition.inMilliseconds /
-                                                _totalDuration.inMilliseconds
-                                            : 0.0,
-                                        backgroundColor: Colors.grey[300],
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                                Colors.pink),
-                                      ),
-                                      Text(
-                                        "${_formatDuration(_currentPosition)} / ${_formatDuration(_totalDuration)}",
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                    ],
-                                  )
-                                : null,
-                            trailing: IconButton(
-                              icon: Icon(
-                                _currentlyPlaying == soundUrl
-                                    ? Icons.pause
-                                    : Icons.play_arrow,
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: EdgeInsets.zero,
+                          itemCount: sounds.length,
+                          itemBuilder: (context, index) {
+                            var sound = sounds[index];
+                            String soundUrl = sound['url'];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                              title: Text(sound['name']),
+                              subtitle: _currentlyPlaying == soundUrl
+                                  ? Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        LinearProgressIndicator(
+                                          value: _totalDuration.inMilliseconds > 0
+                                              ? _currentPosition.inMilliseconds /
+                                                  _totalDuration.inMilliseconds
+                                              : 0.0,
+                                          backgroundColor: Colors.grey[300],
+                                          valueColor: const AlwaysStoppedAnimation<Color>(
+                                              Colors.pink),
+                                        ),
+                                        Text(
+                                          "${_formatDuration(_currentPosition)} / ${_formatDuration(_totalDuration)}",
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ],
+                                    )
+                                  : null,
+                              trailing: IconButton(
+                                icon: Icon(
+                                  _currentlyPlaying == soundUrl
+                                      ? Icons.pause
+                                      : Icons.play_arrow,
+                                ),
+                                onPressed: () => _playSound(soundUrl),
                               ),
-                              onPressed: () => _playSound(soundUrl),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                  ],
 
-                  const SizedBox(height: 20),
-
-                  // Slide Button untuk Mark as Completed
                   _isCompleted
                       ? const Center(
                           child: Text(

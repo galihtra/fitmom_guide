@@ -322,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
               clipBehavior: Clip.none,
               alignment: Alignment.bottomLeft,
               children: [
-                coverImage(),
+                CoverImageWidget(showAdminControls: false),
                 Positioned(
                   top: Dimensions.topProfile,
                   child: Padding(

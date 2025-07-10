@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fitmom_guide/presentation/screen/testimonial/add/add_testimonial_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'widget/like_button_widget.dart';
@@ -13,6 +12,36 @@ class TestimonialScreen extends StatefulWidget {
 
 class _TestimonialScreenState extends State<TestimonialScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +73,7 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
               Expanded(
                 child: CarouselSlider.builder(
                   options: CarouselOptions(
-                    height: screenHeight * 0.55,
+                    height: screenHeight * 0.7,
                     enlargeCenterPage: true,
                     autoPlay: true,
                     autoPlayInterval: const Duration(seconds: 4),
@@ -88,47 +117,77 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
                                   ),
                                   const SizedBox(height: 15),
 
-                                  // Single Image Display
+                                  // Image with 9:16 aspect ratio and fullscreen button
                                   if (imageUrl.isNotEmpty)
-                                    Container(
-                                      width: screenWidth * 0.7,
-                                      height: screenHeight * 0.3,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.network(
-                                          imageUrl,
-                                          fit: BoxFit.cover,
-                                          loadingBuilder: (context, child,
-                                              loadingProgress) {
-                                            if (loadingProgress == null)
-                                              return child;
-                                            return Center(
-                                              child: CircularProgressIndicator(
-                                                value: loadingProgress
-                                                            .expectedTotalBytes !=
-                                                        null
-                                                    ? loadingProgress
-                                                            .cumulativeBytesLoaded /
-                                                        loadingProgress
-                                                            .expectedTotalBytes!
-                                                    : null,
-                                              ),
-                                            );
-                                          },
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                            return Container(
-                                              color: Colors.grey[200],
-                                              child: const Icon(
-                                                  Icons.broken_image,
-                                                  size: 50),
-                                            );
-                                          },
+                                    Stack(
+                                      children: [
+                                        Container(
+                                          width: screenWidth * 0.7,
+                                          height:
+                                              (screenWidth * 0.7) * (16 / 9),
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            color: Colors.grey[200],
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            child: Image.network(
+                                              imageUrl,
+                                              fit: BoxFit.cover,
+                                              loadingBuilder: (context, child,
+                                                  loadingProgress) {
+                                                if (loadingProgress == null)
+                                                  return child;
+                                                return Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    value: loadingProgress
+                                                                .expectedTotalBytes !=
+                                                            null
+                                                        ? loadingProgress
+                                                                .cumulativeBytesLoaded /
+                                                            loadingProgress
+                                                                .expectedTotalBytes!
+                                                        : null,
+                                                  ),
+                                                );
+                                              },
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Container(
+                                                  color: Colors.grey[200],
+                                                  child: const Icon(
+                                                      Icons.broken_image,
+                                                      size: 50),
+                                                );
+                                              },
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                        Positioned(
+                                          bottom: 8,
+                                          right: 8,
+                                          child: GestureDetector(
+                                            onTap: () => _showFullScreenImage(
+                                                context, imageUrl),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black
+                                                    .withOpacity(0.5),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.fullscreen,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
 
                                   const SizedBox(height: 20),

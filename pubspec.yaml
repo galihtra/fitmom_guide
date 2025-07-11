@@ -58,6 +58,7 @@ dependencies:
   youtube_player_flutter: ^9.1.1
   photo_view:
   flutter_cache_manager:
+  just_audio_background:
 
 dev_dependencies:
   flutter_lints: ^4.0.0

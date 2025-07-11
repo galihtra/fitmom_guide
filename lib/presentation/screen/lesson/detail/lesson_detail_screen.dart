@@ -24,6 +24,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   YoutubePlayerController? _youtubeController;
   final LessonService _lessonService = LessonService();
   bool _isCompleted = false;
+  bool _isMuted = false;
   final CollectionReference _soundCollection =
       FirebaseFirestore.instance.collection('sounds');
 
@@ -36,6 +37,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   void initState() {
     super.initState();
     _isCompleted = widget.lesson.isCompleted;
+    _isMuted = widget.lesson.soundEnabled;
     _initializeYoutubePlayer();
     _setupAudioPositionListener();
     _setupFullscreenListener();
@@ -70,9 +72,9 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
       if (videoId != null) {
         _youtubeController = YoutubePlayerController(
           initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
+          flags: YoutubePlayerFlags(
             autoPlay: true,
-            mute: false, 
+            mute: _isMuted,
             loop: true,
             forceHD: true,
           ),
@@ -217,16 +219,18 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  
+
                   // Only show sound section if sound is enabled
                   if (widget.lesson.soundEnabled) ...[
                     const Text("Putar Musik", style: TextStyle(fontSize: 16)),
                     const SizedBox(height: 8),
                     StreamBuilder(
                       stream: _soundCollection.snapshots(),
-                      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                      builder:
+                          (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                         if (!snapshot.hasData) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                              child: CircularProgressIndicator());
                         }
 
                         var sounds = snapshot.data!.docs;
@@ -245,16 +249,20 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                               title: Text(sound['name']),
                               subtitle: _currentlyPlaying == soundUrl
                                   ? Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         LinearProgressIndicator(
-                                          value: _totalDuration.inMilliseconds > 0
-                                              ? _currentPosition.inMilliseconds /
+                                          value: _totalDuration.inMilliseconds >
+                                                  0
+                                              ? _currentPosition
+                                                      .inMilliseconds /
                                                   _totalDuration.inMilliseconds
                                               : 0.0,
                                           backgroundColor: Colors.grey[300],
-                                          valueColor: const AlwaysStoppedAnimation<Color>(
-                                              Colors.pink),
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<
+                                                  Color>(Colors.pink),
                                         ),
                                         Text(
                                           "${_formatDuration(_currentPosition)} / ${_formatDuration(_totalDuration)}",

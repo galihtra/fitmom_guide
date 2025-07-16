@@ -70,6 +70,29 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     return true;
   }
 
+  int naturalCompare(String a, String b) {
+    final regex = RegExp(r'(\d+|\D+)');
+    final aParts = regex.allMatches(a).map((m) => m.group(0)!).toList();
+    final bParts = regex.allMatches(b).map((m) => m.group(0)!).toList();
+
+    for (var i = 0; i < aParts.length && i < bParts.length; i++) {
+      final aPart = aParts[i];
+      final bPart = bParts[i];
+
+      final aNum = int.tryParse(aPart);
+      final bNum = int.tryParse(bPart);
+
+      if (aNum != null && bNum != null) {
+        if (aNum != bNum) return aNum - bNum;
+      } else {
+        final comparison = aPart.compareTo(bPart);
+        if (comparison != 0) return comparison;
+      }
+    }
+
+    return aParts.length - bParts.length;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,7 +163,9 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                   final folders = folderSnapshot.data!.docs.map((doc) {
                     return LessonFolder.fromMap(
                         doc.data() as Map<String, dynamic>, doc.id);
-                  }).toList();
+                  }).toList()
+                    ..sort((a, b) =>
+                        naturalCompare(a.name, b.name)); // Urutkan disini
 
                   if (folders.isEmpty) return SizedBox();
 

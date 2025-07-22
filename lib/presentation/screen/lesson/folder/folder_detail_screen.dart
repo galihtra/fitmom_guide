@@ -25,11 +25,37 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
   final _firestore = FirebaseFirestore.instance;
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   late LessonFolder _currentFolder = widget.folder;
+  bool _isLoading = false;
+  String? _errorMessage;
+  List<LessonFolder> _subfolders = [];
 
   @override
   void initState() {
     super.initState();
     _currentFolder = widget.folder;
+    _loadSubfolders();
+  }
+
+  Future<void> _loadSubfolders() async {
+    try {
+      setState(() => _isLoading = true);
+      final folders = await _lessonService
+          .getSubfolders(widget.courseId, _currentFolder.name)
+          .first;
+      setState(() => _subfolders = folders);
+    } catch (e) {
+      _handleFirestoreError(e, 'loading subfolders');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _handleFirestoreError(dynamic error, String operation) {
+    setState(() {
+      _errorMessage = 'Error during $operation: ${error.toString()}';
+    });
   }
 
   Future<bool> _isFolderComplete(String folderId, String folderName) async {
@@ -39,15 +65,8 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     final folderLessons =
         lessons.where((lesson) => lesson.folderName == folderName).toList();
 
-    // Jika tidak ada materi sama sekali di folder ini, return false
-    if (folderLessons.isEmpty) {
-      return false;
-    }
-
-    // Jika ada materi yang belum selesai, return false
-    if (folderLessons.any((lesson) => !lesson.isCompleted)) {
-      return false;
-    }
+    if (folderLessons.isEmpty) return false;
+    if (folderLessons.any((lesson) => !lesson.isCompleted)) return false;
 
     // Check all subfolders recursively
     final subFolders = await _firestore
@@ -62,35 +81,10 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
           LessonFolder.fromMap(subFolderDoc.data(), subFolderDoc.id);
       final isSubFolderComplete =
           await _isFolderComplete(subFolderDoc.id, subFolder.name);
-      if (!isSubFolderComplete) {
-        return false;
-      }
+      if (!isSubFolderComplete) return false;
     }
 
     return true;
-  }
-
-  int naturalCompare(String a, String b) {
-    final regex = RegExp(r'(\d+|\D+)');
-    final aParts = regex.allMatches(a).map((m) => m.group(0)!).toList();
-    final bParts = regex.allMatches(b).map((m) => m.group(0)!).toList();
-
-    for (var i = 0; i < aParts.length && i < bParts.length; i++) {
-      final aPart = aParts[i];
-      final bPart = bParts[i];
-
-      final aNum = int.tryParse(aPart);
-      final bNum = int.tryParse(bPart);
-
-      if (aNum != null && bNum != null) {
-        if (aNum != bNum) return aNum - bNum;
-      } else {
-        final comparison = aPart.compareTo(bPart);
-        if (comparison != 0) return comparison;
-      }
-    }
-
-    return aParts.length - bParts.length;
   }
 
   @override
@@ -137,41 +131,22 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
         ),
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.white, Colors.grey[50]!],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              // === SUB FOLDERS ===
-              StreamBuilder<QuerySnapshot>(
-                stream: _firestore
-                    .collection('courses')
-                    .doc(widget.courseId)
-                    .collection('folders')
-                    .where('parent_folder_name', isEqualTo: _currentFolder.name)
-                    .snapshots(),
-                builder: (context, folderSnapshot) {
-                  if (!folderSnapshot.hasData) return SizedBox();
-
-                  final folders = folderSnapshot.data!.docs.map((doc) {
-                    return LessonFolder.fromMap(
-                        doc.data() as Map<String, dynamic>, doc.id);
-                  }).toList()
-                    ..sort((a, b) =>
-                        naturalCompare(a.name, b.name)); // Urutkan disini
-
-                  if (folders.isEmpty) return SizedBox();
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+      body: _errorMessage != null
+          ? _buildErrorWidget()
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.white, Colors.grey[50]!],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // === SUB FOLDERS ===
+                    if (_subfolders.isNotEmpty) ...[
                       Padding(
                         padding: const EdgeInsets.only(left: 8.0, bottom: 8),
                         child: Text(
@@ -184,7 +159,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                           ),
                         ),
                       ),
-                      ...folders.map((folder) {
+                      ..._subfolders.map((folder) {
                         return FutureBuilder<bool>(
                           future: _isFolderComplete(folder.id, folder.name),
                           builder: (context, snapshot) {
@@ -195,76 +170,112 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                       }).toList(),
                       SizedBox(height: 16),
                     ],
-                  );
-                },
-              ),
 
-              // === LESSONS ===
-              Expanded(
-                child: StreamBuilder<List<Lesson>>(
-                  stream: _lessonService.getLessons(widget.courseId, userId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            MyColor.primaryColor,
-                          ),
-                        ),
-                      );
-                    }
-
-                    final lessons = snapshot.data!
-                        .where((lesson) =>
-                            lesson.folderName == _currentFolder.name)
-                        .toList();
-
-                    if (lessons.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.fitness_center,
-                              size: 60,
-                              color: Colors.grey[300],
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Tidak Ada Materi',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
+                    // === LESSONS ===
+                    Expanded(
+                      child: StreamBuilder<List<Lesson>>(
+                        stream: _lessonService.getLessons(widget.courseId, userId),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  MyColor.primaryColor,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Belum ada materi yang tersedia dalam folder ini',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+                            );
+                          }
 
-                    return ListView.separated(
-                      physics: BouncingScrollPhysics(),
-                      itemCount: lessons.length,
-                      separatorBuilder: (context, index) =>
-                          SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final lesson = lessons[index];
-                        return _buildLessonCard(lesson);
-                      },
-                    );
-                  },
+                          if (snapshot.hasError) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _handleFirestoreError(
+                                  snapshot.error!, 'loading lessons');
+                            });
+                            return Center(child: CircularProgressIndicator());
+                          }
+
+                          final lessons = snapshot.data!
+                              .where((lesson) =>
+                                  lesson.folderName == _currentFolder.name)
+                              .toList();
+
+                          if (lessons.isEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.fitness_center,
+                                    size: 60,
+                                    color: Colors.grey[300],
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'Tidak Ada Materi',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Belum ada materi yang tersedia dalam folder ini',
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return ListView.separated(
+                            physics: BouncingScrollPhysics(),
+                            itemCount: lessons.length,
+                            separatorBuilder: (context, index) =>
+                                SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final lesson = lessons[index];
+                              return _buildLessonCard(lesson);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: Colors.red, size: 48),
+            SizedBox(height: 16),
+            Text(
+              _errorMessage ?? 'An error occurred',
+              style: TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadSubfolders,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: MyColor.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
       ),
     );

@@ -10,9 +10,10 @@ class Lesson {
   String ulasanPengguna;
   double rating;
   int index;
-  bool useAffirmation; // New field
-  String affirmationMessage; // New field
+  bool useAffirmation;
+  String affirmationMessage;
   final String? folderName;
+  final String? folderPath; // Tambahkan ini
   bool soundEnabled;
 
   Lesson({
@@ -27,9 +28,10 @@ class Lesson {
     required this.ulasanPengguna,
     required this.rating,
     required this.index,
-    this.useAffirmation = false, // Default to false
-    this.affirmationMessage = '', // Default empty
+    this.useAffirmation = false,
+    this.affirmationMessage = '',
     this.folderName,
+    this.folderPath, // Tambahkan ini
     this.soundEnabled = true,
   });
 
@@ -49,6 +51,7 @@ class Lesson {
       useAffirmation: map['use_affirmation'] ?? false,
       affirmationMessage: map['affirmation_message'] ?? '',
       folderName: map['folder_name'] ?? '',
+      folderPath: map['folder_path'], // Tambahkan ini
       soundEnabled: map['sound_enabled'] ?? true,
     );
   }
@@ -68,6 +71,7 @@ class Lesson {
       'use_affirmation': useAffirmation,
       'affirmation_message': affirmationMessage,
       'folder_name': folderName,
+      'folder_path': folderPath, // Tambahkan ini
       'sound_enabled': soundEnabled,
     };
   }

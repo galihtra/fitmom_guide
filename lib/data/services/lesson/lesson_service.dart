@@ -191,4 +191,48 @@ class LessonService {
             .map((doc) => LessonFolder.fromMap(doc.data(), doc.id))
             .toList());
   }
+
+  Stream<List<LessonFolder>> getSubfoldersByParentName(
+      String courseId, String parentName) {
+    return _firestore
+        .collection('courses')
+        .doc(courseId)
+        .collection('folders')
+        .where('parent_folder_name', isEqualTo: parentName)
+        .orderBy('index')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => LessonFolder.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
+// Pertahankan untuk query lessons
+  Stream<List<Lesson>> getLessonsByFolderPath(
+      String courseId, String folderPath) {
+    return _firestore
+        .collection('courses')
+        .doc(courseId)
+        .collection('lessons')
+        .where('folder_path', isEqualTo: folderPath)
+        .orderBy('index')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Lesson.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
+  /// Get subfolders of a parent folder
+  Stream<List<LessonFolder>> getSubfolders(
+      String courseId, String parentFolderName) {
+    return _firestore
+        .collection('courses')
+        .doc(courseId)
+        .collection('folders')
+        .where('parent_folder_name', isEqualTo: parentFolderName)
+        .orderBy('index')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => LessonFolder.fromMap(doc.data(), doc.id))
+            .toList());
+  }
 }

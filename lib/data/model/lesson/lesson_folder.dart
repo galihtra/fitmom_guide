@@ -2,13 +2,15 @@ class LessonFolder {
   final String id;
   final String name;
   final String? parentFolderName;
-  final int? index; // Ubah menjadi nullable
+  final String? fullPath;
+  final int index; // Ubah dari nullable ke non-nullable dengan default value
 
   LessonFolder({
     required this.id,
     required this.name,
     this.parentFolderName,
-    this.index, // Sekarang bisa null
+    this.fullPath,
+    this.index = 0, // Beri default value 0
   });
 
   factory LessonFolder.fromMap(Map<String, dynamic> map, String id) {
@@ -16,7 +18,8 @@ class LessonFolder {
       id: id,
       name: map['name'] ?? '',
       parentFolderName: map['parent_folder_name'],
-      index: map['index'], // Tidak perlu default value
+      fullPath: map['full_path'],
+      index: map['index'] ?? 0, // Beri default value 0 jika null
     );
   }
 
@@ -24,6 +27,7 @@ class LessonFolder {
     return {
       'name': name,
       'parent_folder_name': parentFolderName,
+      'full_path': fullPath,
       'index': index,
     };
   }

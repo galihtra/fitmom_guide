@@ -49,7 +49,9 @@ class MainFolderCard extends StatelessWidget {
             ),
           );
 
-          if (useAffirmation && affirmationMessage.isNotEmpty && result == true) {
+          if (useAffirmation &&
+              affirmationMessage.isNotEmpty &&
+              result == true) {
             onShowAffirmation(affirmationMessage);
           }
         },
@@ -91,32 +93,32 @@ class MainFolderCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    StreamBuilder<List<Lesson>>(
-                      stream: lessonService.getLessons(courseId, userId),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return Text(
-                            'Memuat materi...',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
-                          );
-                        }
+                    // StreamBuilder<List<Lesson>>(
+                    //   stream: lessonService.getLessons(courseId, userId),
+                    //   builder: (context, snapshot) {
+                    //     if (!snapshot.hasData) {
+                    //       return Text(
+                    //         'Memuat materi...',
+                    //         style: TextStyle(
+                    //           fontSize: 12,
+                    //           color: Colors.grey[500],
+                    //         ),
+                    //       );
+                    //     }
 
-                        final lessonCount = snapshot.data!
-                            .where((lesson) => lesson.folderName == folder.name)
-                            .length;
+                    //     final lessonCount = snapshot.data!
+                    //         .where((lesson) => lesson.folderName == folder.name)
+                    //         .length;
 
-                        return Text(
-                          '$lessonCount materi',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
-                        );
-                      },
-                    ),
+                    //     return Text(
+                    //       '$lessonCount materi',
+                    //       style: TextStyle(
+                    //         fontSize: 12,
+                    //         color: Colors.grey[500],
+                    //       ),
+                    //     );
+                    //   },
+                    // ),
                   ],
                 ),
               ),

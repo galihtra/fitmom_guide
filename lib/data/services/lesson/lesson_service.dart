@@ -208,7 +208,7 @@ class LessonService {
 
 // Pertahankan untuk query lessons
   Stream<List<Lesson>> getLessonsByFolderPath(
-      String courseId, String folderPath) {
+      String courseId, String folderPath, String userId) {
     return _firestore
         .collection('courses')
         .doc(courseId)
@@ -216,9 +216,30 @@ class LessonService {
         .where('folder_path', isEqualTo: folderPath)
         .orderBy('index')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Lesson.fromMap(doc.data(), doc.id))
-            .toList());
+        .asyncMap((snapshot) async {
+      List<Lesson> lessons = [];
+
+      for (var doc in snapshot.docs) {
+        var lesson = Lesson.fromMap(doc.data(), doc.id);
+
+        // Check user progress
+        var userProgress = await _firestore
+            .collection('courses')
+            .doc(courseId)
+            .collection('lessons')
+            .doc(lesson.id)
+            .collection('lesson_progress')
+            .doc(userId)
+            .get();
+
+        if (userProgress.exists) {
+          lesson.isCompleted = userProgress.get('isCompleted') ?? false;
+        }
+
+        lessons.add(lesson);
+      }
+      return lessons;
+    });
   }
 
   /// Get subfolders of a parent folder

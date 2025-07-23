@@ -40,7 +40,8 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     try {
       setState(() => _isLoading = true);
       final folders = await _lessonService
-          .getSubfolders(widget.courseId, _currentFolder.name)
+          .getSubfolders(
+              widget.courseId, _currentFolder.fullPath ?? _currentFolder.name)
           .first;
       setState(() => _subfolders = folders);
     } catch (e) {
@@ -58,30 +59,33 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     });
   }
 
-  Future<bool> _isFolderComplete(String folderId, String folderName) async {
-    // Check direct lessons in this folder
-    final lessons =
-        await _lessonService.getLessons(widget.courseId, userId).first;
-    final folderLessons =
-        lessons.where((lesson) => lesson.folderName == folderName).toList();
+  Future<bool> _isFolderComplete(String folderId, String folderPath) async {
+    // Get lessons with user progress
+    final lessons = await _lessonService
+        .getLessonsByFolderPath(widget.courseId, folderPath, userId)
+        .first;
 
-    if (folderLessons.isEmpty) return false;
-    if (folderLessons.any((lesson) => !lesson.isCompleted)) return false;
+    // Check if any lesson in this folder is incomplete
+    if (lessons.any((lesson) => !lesson.isCompleted)) {
+      return false;
+    }
 
     // Check all subfolders recursively
     final subFolders = await _firestore
         .collection('courses')
         .doc(widget.courseId)
         .collection('folders')
-        .where('parent_folder_name', isEqualTo: folderName)
+        .where('parent_full_path', isEqualTo: folderPath)
         .get();
 
     for (final subFolderDoc in subFolders.docs) {
       final subFolder =
           LessonFolder.fromMap(subFolderDoc.data(), subFolderDoc.id);
-      final isSubFolderComplete =
-          await _isFolderComplete(subFolderDoc.id, subFolder.name);
-      if (!isSubFolderComplete) return false;
+      final isSubFolderComplete = await _isFolderComplete(
+          subFolderDoc.id, subFolder.fullPath ?? subFolder.name);
+      if (!isSubFolderComplete) {
+        return false;
+      }
     }
 
     return true;
@@ -92,7 +96,8 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: FutureBuilder<bool>(
-          future: _isFolderComplete(widget.folder.id, widget.folder.name),
+          future: _isFolderComplete(
+              widget.folder.id, widget.folder.fullPath ?? widget.folder.name),
           builder: (context, snapshot) {
             final isComplete = snapshot.data ?? false;
             return Row(
@@ -161,7 +166,8 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                       ),
                       ..._subfolders.map((folder) {
                         return FutureBuilder<bool>(
-                          future: _isFolderComplete(folder.id, folder.name),
+                          future: _isFolderComplete(
+                              folder.id, folder.fullPath ?? folder.name),
                           builder: (context, snapshot) {
                             final isComplete = snapshot.data ?? false;
                             return _buildFolderItem(folder, isComplete);
@@ -174,9 +180,13 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                     // === LESSONS ===
                     Expanded(
                       child: StreamBuilder<List<Lesson>>(
-                        stream: _lessonService.getLessons(widget.courseId, userId),
+                        stream: _lessonService.getLessonsByFolderPath(
+                            widget.courseId,
+                            _currentFolder.fullPath ?? _currentFolder.name,
+                            userId),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
                             return Center(
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -194,10 +204,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                             return Center(child: CircularProgressIndicator());
                           }
 
-                          final lessons = snapshot.data!
-                              .where((lesson) =>
-                                  lesson.folderName == _currentFolder.name)
-                              .toList();
+                          final lessons = snapshot.data ?? [];
 
                           if (lessons.isEmpty) {
                             return Center(
@@ -355,7 +362,9 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
               builder: (context) => PreviewLessonScreen(lesson: lesson),
             ),
           );
-          if (result == true) {
+
+          // Refresh state when returning from preview
+          if (result == true && mounted) {
             setState(() {});
           }
         },

@@ -60,6 +60,15 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
   }
 
   Future<bool> _isFolderComplete(String folderId, String folderPath) async {
+    // Pertama cek apakah folder memiliki materi atau subfolder
+    final hasContent = await _checkFolderHasContent(folderPath);
+
+    // Jika folder benar-benar kosong (tidak ada materi maupun subfolder),
+    // kita anggap belum completed
+    if (!hasContent) {
+      return false;
+    }
+
     // Get lessons with user progress
     final lessons = await _lessonService
         .getLessonsByFolderPath(widget.courseId, folderPath, userId)
@@ -89,6 +98,27 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     }
 
     return true;
+  }
+
+  Future<bool> _checkFolderHasContent(String folderPath) async {
+    // Cek apakah ada materi di folder ini
+    final lessons = await _lessonService
+        .getLessonsByFolderPath(widget.courseId, folderPath, userId)
+        .first;
+
+    if (lessons.isNotEmpty) {
+      return true;
+    }
+
+    // Cek apakah ada subfolder
+    final subFolders = await _firestore
+        .collection('courses')
+        .doc(widget.courseId)
+        .collection('folders')
+        .where('parent_full_path', isEqualTo: folderPath)
+        .get();
+
+    return subFolders.docs.isNotEmpty;
   }
 
   @override

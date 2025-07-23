@@ -27,7 +27,7 @@ class _PreviewLessonScreenState extends State<PreviewLessonScreen> {
   }
 
   Future<String> _fetchUserName(String userId) async {
-    if (userId.isEmpty) return "User Tidak Diketahui"; // Cek jika userId kosong
+    if (userId.isEmpty) return "User Tidak Diketahui";
 
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -35,13 +35,9 @@ class _PreviewLessonScreenState extends State<PreviewLessonScreen> {
           .doc(userId)
           .get();
 
-      print("🔎 Mencari userId: $userId");
-
       if (userDoc.exists) {
-        print("✅ Data user ditemukan: ${userDoc.data()}");
         return userDoc['name'] ?? "User Tidak Diketahui";
       } else {
-        print("⚠ UserId tidak ditemukan di Firestore");
         return "User Tidak Diketahui";
       }
     } catch (e) {
@@ -81,29 +77,28 @@ class _PreviewLessonScreenState extends State<PreviewLessonScreen> {
 
       for (var doc in reviewSnapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
-        if (data.containsKey('rating') && data.containsKey('comment')) {
-          double rating = (data['rating'] ?? 0).toDouble();
-          totalRating += rating;
+
+        // Filter komentar yang null atau kosong
+        final comment = data['comment']?.toString().trim() ?? '';
+        final rating = data['rating'] ?? 0;
+
+        // Hanya proses jika komentar tidak kosong
+        if (comment.isNotEmpty) {
+          totalRating += rating.toDouble();
 
           String userId = data['userId'] ?? "";
-          print("📌 Mengambil nama untuk userId: $userId");
-
           String userName = await _fetchUserName(userId);
-
-          print("🔍 Nama user ditemukan: $userName");
 
           reviews.add({
             'user': userName,
-            'comment': data['comment'] ?? "Tidak ada komentar",
+            'comment': comment,
           });
         }
       }
 
       setState(() {
-        _averageRating = reviewSnapshot.docs.isNotEmpty
-            ? totalRating / reviewSnapshot.docs.length
-            : 0;
-        _reviewCount = reviewSnapshot.docs.length;
+        _averageRating = reviews.isNotEmpty ? totalRating / reviews.length : 0;
+        _reviewCount = reviews.length;
         _reviews = reviews;
       });
     } catch (e) {
@@ -224,7 +219,7 @@ class _PreviewLessonScreenState extends State<PreviewLessonScreen> {
                         );
                       }).toList(),
                     ),
-                    const Spacer(), // Ini memastikan tombol tetap di bawah jika tinggi lebih
+                    const Spacer(),
                     SizedBox(
                       width: double.infinity,
                       height: 50,

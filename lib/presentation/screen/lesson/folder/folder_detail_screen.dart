@@ -40,11 +40,14 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     try {
       setState(() => _isLoading = true);
       final folders = await _lessonService
-          .getSubfolders(
-              widget.courseId, _currentFolder.fullPath ?? _currentFolder.name)
+          .getSubfolders(widget.courseId, _currentFolder.name)
           .first;
+
+      print("Subfolders fetched: $folders");
+
       setState(() => _subfolders = folders);
     } catch (e) {
+      print("Error fetching subfolders: $e");
       _handleFirestoreError(e, 'loading subfolders');
     } finally {
       if (mounted) {

@@ -250,7 +250,7 @@ class LessonService {
         .doc(courseId)
         .collection('folders')
         .where('parent_folder_name', isEqualTo: parentFolderName)
-        .orderBy('index')
+        .orderBy('index') // Pastikan subfolder diurutkan
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => LessonFolder.fromMap(doc.data(), doc.id))

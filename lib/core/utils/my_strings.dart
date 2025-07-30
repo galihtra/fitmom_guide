@@ -6,7 +6,7 @@ class MyStrings {
 
   static const String pelatihan = "Pelatihan";
 
-  static const String beritaDanTips = "Berita & Tips";
+  static const String beritaDanTips = "kategori";
 
   static const String testimoni = "Testimoni";
 

@@ -35,22 +35,22 @@ class _CategoryFilterWidgetState extends State<CategoryFilterWidget> {
           return ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: ChoiceChip(
-                  label: const Text("Semua"),
-                  selected: _selectedCategory == null,
-                  selectedColor: MyColor.secondaryColor,
-                  labelStyle: TextStyle(
-                    color:
-                        _selectedCategory == null ? Colors.white : Colors.black,
-                  ),
-                  onSelected: (_) {
-                    setState(() => _selectedCategory = null);
-                    widget.onCategorySelected(null);
-                  },
-                ),
-              ),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              //   child: ChoiceChip(
+              //     label: const Text("Semua"),
+              //     selected: _selectedCategory == null,
+              //     selectedColor: MyColor.secondaryColor,
+              //     labelStyle: TextStyle(
+              //       color:
+              //           _selectedCategory == null ? Colors.white : Colors.black,
+              //     ),
+              //     onSelected: (_) {
+              //       setState(() => _selectedCategory = null);
+              //       widget.onCategorySelected(null);
+              //     },
+              //   ),
+              // ),
               ...categories.map((category) => Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: ChoiceChip(

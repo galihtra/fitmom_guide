@@ -43,7 +43,7 @@ class _NewsListScreenState extends State<NewsListScreen> {
                   }
 
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text("Belum ada berita"));
+                    return const Center(child: Text("Belum ada informasi"));
                   }
 
                   final newsList = snapshot.data!;

@@ -63,26 +63,19 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
   }
 
   Future<bool> _isFolderComplete(String folderId, String folderPath) async {
-    // Pertama cek apakah folder memiliki materi atau subfolder
     final hasContent = await _checkFolderHasContent(folderPath);
-
-    // Jika folder benar-benar kosong (tidak ada materi maupun subfolder),
-    // kita anggap belum completed
     if (!hasContent) {
       return false;
     }
 
-    // Get lessons with user progress
     final lessons = await _lessonService
         .getLessonsByFolderPath(widget.courseId, folderPath, userId)
         .first;
 
-    // Check if any lesson in this folder is incomplete
     if (lessons.any((lesson) => !lesson.isCompleted)) {
       return false;
     }
 
-    // Check all subfolders recursively
     final subFolders = await _firestore
         .collection('courses')
         .doc(widget.courseId)
@@ -104,7 +97,6 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
   }
 
   Future<bool> _checkFolderHasContent(String folderPath) async {
-    // Cek apakah ada materi di folder ini
     final lessons = await _lessonService
         .getLessonsByFolderPath(widget.courseId, folderPath, userId)
         .first;
@@ -113,7 +105,6 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
       return true;
     }
 
-    // Cek apakah ada subfolder
     final subFolders = await _firestore
         .collection('courses')
         .doc(widget.courseId)
@@ -145,11 +136,14 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                       size: 20,
                     ),
                   ),
-                Text(
-                  _currentFolder.name,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                Flexible(
+                  child: Text(
+                    _currentFolder.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -171,48 +165,48 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
       ),
       body: _errorMessage != null
           ? _buildErrorWidget()
-          : Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.white, Colors.grey[50]!],
+          : SingleChildScrollView(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.white, Colors.grey[50]!],
+                  ),
                 ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    // === SUB FOLDERS ===
-                    if (_subfolders.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0, bottom: 8),
-                        child: Text(
-                          "SUB FOLDER",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[600],
-                            letterSpacing: 1.2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      // === SUB FOLDERS ===
+                      if (_subfolders.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0, bottom: 8),
+                          child: Text(
+                            "SUB FOLDER",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600],
+                              letterSpacing: 1.2,
+                            ),
                           ),
                         ),
-                      ),
-                      ..._subfolders.map((folder) {
-                        return FutureBuilder<bool>(
-                          future: _isFolderComplete(
-                              folder.id, folder.fullPath ?? folder.name),
-                          builder: (context, snapshot) {
-                            final isComplete = snapshot.data ?? false;
-                            return _buildFolderItem(folder, isComplete);
-                          },
-                        );
-                      }).toList(),
-                      SizedBox(height: 16),
-                    ],
+                        ..._subfolders.map((folder) {
+                          return FutureBuilder<bool>(
+                            future: _isFolderComplete(
+                                folder.id, folder.fullPath ?? folder.name),
+                            builder: (context, snapshot) {
+                              final isComplete = snapshot.data ?? false;
+                              return _buildFolderItem(folder, isComplete);
+                            },
+                          );
+                        }).toList(),
+                        SizedBox(height: 16),
+                      ],
 
-                    // === LESSONS ===
-                    Expanded(
-                      child: StreamBuilder<List<Lesson>>(
+                      // === LESSONS ===
+                      StreamBuilder<List<Lesson>>(
                         stream: _lessonService.getLessonsByFolderPath(
                             widget.courseId,
                             _currentFolder.fullPath ?? _currentFolder.name,
@@ -221,9 +215,13 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  MyColor.primaryColor,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 32.0),
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    MyColor.primaryColor,
+                                  ),
                                 ),
                               ),
                             );
@@ -234,56 +232,65 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                               _handleFirestoreError(
                                   snapshot.error!, 'loading lessons');
                             });
-                            return Center(child: CircularProgressIndicator());
-                          }
-
-                          final lessons = snapshot.data ?? [];
-
-                          if (lessons.isEmpty) {
                             return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.fitness_center,
-                                    size: 60,
-                                    color: Colors.grey[300],
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'Tidak Ada Materi',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Belum ada materi yang tersedia dalam folder ini',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
-                                ],
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 32.0),
+                                child: CircularProgressIndicator(),
                               ),
                             );
                           }
 
-                          return ListView.separated(
-                            physics: BouncingScrollPhysics(),
-                            itemCount: lessons.length,
-                            separatorBuilder: (context, index) =>
-                                SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final lesson = lessons[index];
-                              return _buildLessonCard(lesson);
-                            },
+                          final lessons = snapshot.data ?? [];
+
+                          if (lessons.isEmpty && _subfolders.isEmpty) {
+                            return Container(
+                              height: MediaQuery.of(context).size.height * 0.6,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.fitness_center,
+                                      size: 60,
+                                      color: Colors.grey[300],
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Tidak Ada Materi',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Belum ada materi yang tersedia dalam folder ini',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            children: [
+                              ...lessons.map((lesson) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12.0),
+                                  child: _buildLessonCard(lesson),
+                                );
+                              }).toList(),
+                            ],
                           );
                         },
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -291,31 +298,33 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
   }
 
   Widget _buildErrorWidget() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, color: Colors.red, size: 48),
-            SizedBox(height: 16),
-            Text(
-              _errorMessage ?? 'An error occurred',
-              style: TextStyle(color: Colors.red),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadSubfolders,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MyColor.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, color: Colors.red, size: 48),
+              SizedBox(height: 16),
+              Text(
+                _errorMessage ?? 'An error occurred',
+                style: TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
               ),
-              child: Text('Coba Lagi', style: TextStyle(color: Colors.white)),
-            ),
-          ],
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadSubfolders,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: MyColor.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -396,7 +405,6 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
             ),
           );
 
-          // Refresh state when returning from preview
           if (result == true && mounted) {
             setState(() {});
           }

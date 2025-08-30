@@ -62,14 +62,20 @@ class NewsCardWidget extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          "By ${news.author}",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
+                        Expanded(
+                          child: Text(
+                            "By ${news.author}",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade700,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           "${news.publishDate.toLocal()}".split(' ')[0],
                           style: TextStyle(

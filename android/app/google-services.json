@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:161249607054:android:196b39ffa35306ef69f8df",
+        "mobilesdk_app_id": "1:161249607054:android:5bf04e793f25808969f8df",
         "android_client_info": {
-          "package_name": "com.example.fitmom_guide"
+          "package_name": "com.example.admin_fitmom"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "161249607054-vt7l3m4fjar0i0etq1ajdamvi01l4edt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA_MKM_j5vh96H9Ll3s5FKqfldWkp3YmAA"
@@ -20,7 +25,99 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161249607054-vt7l3m4fjar0i0etq1ajdamvi01l4edt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161249607054-oa1go8t7sdgml04ucpspugmok769oqmc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fitmomGuide"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161249607054:android:196b39ffa35306ef69f8df",
+        "android_client_info": {
+          "package_name": "com.example.fitmom_guide"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "161249607054-4clhmh061bledtdoqh6j9vi8l39pgjvb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fitmom_guide",
+            "certificate_hash": "a8da8cbb3f1300847d2808d7c7bbc8ef3942546c"
+          }
+        },
+        {
+          "client_id": "161249607054-vt7l3m4fjar0i0etq1ajdamvi01l4edt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_MKM_j5vh96H9Ll3s5FKqfldWkp3YmAA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161249607054-vt7l3m4fjar0i0etq1ajdamvi01l4edt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161249607054-oa1go8t7sdgml04ucpspugmok769oqmc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fitmomGuide"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161249607054:android:b0473ab3c8a7a08369f8df",
+        "android_client_info": {
+          "package_name": "com.tehobenk.fitmom_guide"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "161249607054-vt7l3m4fjar0i0etq1ajdamvi01l4edt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_MKM_j5vh96H9Ll3s5FKqfldWkp3YmAA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161249607054-vt7l3m4fjar0i0etq1ajdamvi01l4edt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161249607054-oa1go8t7sdgml04ucpspugmok769oqmc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fitmomGuide"
+              }
+            }
+          ]
         }
       }
     }

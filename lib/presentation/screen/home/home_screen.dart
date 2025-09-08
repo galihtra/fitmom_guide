@@ -40,74 +40,74 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkClaimStatus();
-      _showReminderPopup(); // Moved reminder popup here
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _checkClaimStatus();
+    //   // _showReminderPopup(); // Moved reminder popup here
+    // });
   }
 
-  Future<void> _showReminderPopup() async {
-    final reminderSnapshot = await _firestore.collection('reminders').get();
-    final imageUrls = reminderSnapshot.docs
-        .map((doc) => (doc.data() as Map<String, dynamic>)['imageUrl'] ?? '')
-        .where((url) => url.isNotEmpty)
-        .toList();
+  // Future<void> _showReminderPopup() async {
+  //   final reminderSnapshot = await _firestore.collection('reminders').get();
+  //   final imageUrls = reminderSnapshot.docs
+  //       .map((doc) => (doc.data() as Map<String, dynamic>)['imageUrl'] ?? '')
+  //       .where((url) => url.isNotEmpty)
+  //       .toList();
 
-    if (imageUrls.isNotEmpty && mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          contentPadding: EdgeInsets.zero,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                children: [
-                  CarouselSlider(
-                    options: CarouselOptions(
-                      height: 500,
-                      autoPlay: true,
-                      enlargeCenterPage: true,
-                      viewportFraction: 1.0,
-                      aspectRatio: 16 / 9,
-                    ),
-                    items: imageUrls.map((imageUrl) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          imageUrl,
-                          width: double.infinity,
-                          fit: BoxFit.fill,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.broken_image,
-                              size: 100,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-  }
+  //   if (imageUrls.isNotEmpty && mounted) {
+  //     showDialog(
+  //       context: context,
+  //       barrierDismissible: false,
+  //       builder: (context) => AlertDialog(
+  //         contentPadding: EdgeInsets.zero,
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Stack(
+  //               children: [
+  //                 CarouselSlider(
+  //                   options: CarouselOptions(
+  //                     height: 500,
+  //                     autoPlay: true,
+  //                     enlargeCenterPage: true,
+  //                     viewportFraction: 1.0,
+  //                     aspectRatio: 16 / 9,
+  //                   ),
+  //                   items: imageUrls.map((imageUrl) {
+  //                     return ClipRRect(
+  //                       borderRadius: BorderRadius.circular(10),
+  //                       child: Image.network(
+  //                         imageUrl,
+  //                         width: double.infinity,
+  //                         fit: BoxFit.fill,
+  //                         errorBuilder: (context, error, stackTrace) =>
+  //                             Container(
+  //                           color: Colors.grey[300],
+  //                           child: const Icon(
+  //                             Icons.broken_image,
+  //                             size: 100,
+  //                             color: Colors.grey,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     );
+  //                   }).toList(),
+  //                 ),
+  //                 Positioned(
+  //                   top: 5,
+  //                   right: 5,
+  //                   child: IconButton(
+  //                     icon: const Icon(Icons.close, color: Colors.black),
+  //                     onPressed: () => Navigator.of(context).pop(),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     );
+  //   }
+  // }
 
   Future<void> _checkClaimStatus() async {
     User? user = FirebaseAuth.instance.currentUser;

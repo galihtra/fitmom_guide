@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:slider_button/slider_button.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:audio_session/audio_session.dart';
 
 import '../../../../data/model/lesson/lesson.dart';
@@ -40,20 +41,6 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
     _isMuted = widget.lesson.soundEnabled;
     _initializeYoutubePlayer();
     _setupAudioPositionListener();
-    _setupFullscreenListener();
-  }
-
-  void _setupFullscreenListener() {
-    _youtubeController?.addListener(() {
-      if (_youtubeController!.value.isFullScreen) {
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ]);
-      } else {
-        SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-      }
-    });
   }
 
   void _setupAudioPositionListener() {
@@ -68,18 +55,52 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
 
   void _initializeYoutubePlayer() {
     if (widget.lesson.urlVideo.isNotEmpty) {
-      final videoId = YoutubePlayer.convertUrlToId(widget.lesson.urlVideo);
-      if (videoId != null) {
-        _youtubeController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: YoutubePlayerFlags(
+      try {
+        final videoId =
+            YoutubePlayerController.convertUrlToId(widget.lesson.urlVideo);
+        if (videoId != null) {
+          _youtubeController = YoutubePlayerController.fromVideoId(
+            videoId: videoId,
             autoPlay: true,
-            mute: _isMuted,
-            loop: true,
-            forceHD: true,
-          ),
-        );
+            params: YoutubePlayerParams(
+              mute: _isMuted,
+              showControls: false,
+              showFullscreenButton: true,
+              loop: false,
+              enableJavaScript: true,
+              playsInline: false,
+              strictRelatedVideos: false,
+              showVideoAnnotations: false,
+              enableKeyboard: false,
+              origin: 'https://www.youtube-nocookie.com',
+            ),
+          );
+        }
+      } catch (e) {
+        print("Error initializing YouTube player: $e");
       }
+    }
+  }
+
+  Future<void> _openYoutube() async {
+    final url = widget.lesson.urlVideo.trim();
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('URL video tidak tersedia.')),
+      );
+      return;
+    }
+
+    final uri = Uri.parse(url);
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication, // langsung ke app YouTube/browser
+    );
+
+    if (!launched) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal membuka YouTube. Coba lagi ya.')),
+      );
     }
   }
 
@@ -161,7 +182,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     _audioPlayer.stop();
     _audioPlayer.dispose();
-    _youtubeController?.dispose();
+    _youtubeController?.close();
     super.dispose();
   }
 
@@ -184,16 +205,9 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               Container(
                 width: double.infinity,
                 height: 630,
-                child: YoutubePlayerBuilder(
-                  onExitFullScreen: () {
-                    SystemChrome.setPreferredOrientations(
-                        DeviceOrientation.values);
-                  },
-                  player: YoutubePlayer(
-                    controller: _youtubeController!,
-                    aspectRatio: 16 / 9,
-                  ),
-                  builder: (context, player) => player,
+                child: YoutubePlayer(
+                  controller: _youtubeController!,
+                  aspectRatio: 16 / 9,
                 ),
               )
             else if (widget.lesson.image.isNotEmpty)
@@ -215,6 +229,81 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Fallback notice + CTA
+                  // Container(
+                  //   decoration: BoxDecoration(
+                  //     gradient: const LinearGradient(
+                  //       begin: Alignment.topLeft,
+                  //       end: Alignment.bottomRight,
+                  //       colors: [Color(0xFFFFE4EC), Color(0xFFFFF0F3)],
+                  //     ),
+                  //     borderRadius: BorderRadius.circular(16),
+                  //     border:
+                  //         Border.all(color: const Color(0xFFFF8FB1), width: 1),
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: Colors.pink.withOpacity(0.08),
+                  //         blurRadius: 16,
+                  //         offset: const Offset(0, 8),
+                  //       ),
+                  //     ],
+                  //   ),
+                  //   padding: const EdgeInsets.symmetric(
+                  //       horizontal: 16, vertical: 14),
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: [
+                  //       Row(
+                  //         children: [
+                  //           Container(
+                  //             decoration: BoxDecoration(
+                  //               color: Colors.pink.shade50,
+                  //               shape: BoxShape.circle,
+                  //             ),
+                  //             padding: const EdgeInsets.all(8),
+                  //             child: const Icon(Icons.info_outline,
+                  //                 color: Colors.pink, size: 20),
+                  //           ),
+                  //           const SizedBox(width: 10),
+                  //           const Expanded(
+                  //             child: Text(
+                  //               'Jika video tidak bisa diputar, silakan klik tombol di bawah untuk membuka langsung di YouTube.',
+                  //               style: TextStyle(fontSize: 13.5, height: 1.35),
+                  //             ),
+                  //           ),
+                  //         ],
+                  //       ),
+                  //       const SizedBox(height: 12),
+                  //       SizedBox(
+                  //         width: double.infinity,
+                  //         child: ElevatedButton.icon(
+                  //           onPressed: widget.lesson.urlVideo.trim().isEmpty
+                  //               ? null
+                  //               : _openYoutube,
+                  //           icon: const Icon(Icons.play_circle_fill),
+                  //           label: const Text('Buka Video'),
+                  //           style: ElevatedButton.styleFrom(
+                  //             elevation: 0,
+                  //             foregroundColor: Colors.white,
+                  //             backgroundColor: Colors.redAccent,
+                  //             disabledBackgroundColor: Colors.grey.shade400,
+                  //             padding: const EdgeInsets.symmetric(
+                  //                 vertical: 14, horizontal: 16),
+                  //             shape: RoundedRectangleBorder(
+                  //               borderRadius: BorderRadius.circular(12),
+                  //             ),
+                  //             textStyle: const TextStyle(
+                  //               fontWeight: FontWeight.w700,
+                  //               fontSize: 14.5,
+                  //               letterSpacing: .2,
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
+                  // const SizedBox(height: 12),
                   Text(widget.lesson.description,
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.bold)),

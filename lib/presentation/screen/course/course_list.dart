@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fitmom_guide/core/utils/my_color.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../data/model/course/course.dart';
 import '../../../data/model/lesson/lesson.dart';
 import '../../../data/services/course/course_service.dart';

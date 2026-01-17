@@ -59,50 +59,59 @@ class _HomeScreenState extends State<HomeScreen> {
         barrierDismissible: false,
         builder: (context) => AlertDialog(
           contentPadding: EdgeInsets.zero,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                children: [
-                  CarouselSlider(
-                    options: CarouselOptions(
-                      height: 500,
-                      autoPlay: true,
-                      enlargeCenterPage: true,
-                      viewportFraction: 1.0,
-                      aspectRatio: 16 / 9,
-                    ),
-                    items: imageUrls.map((imageUrl) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          imageUrl,
-                          width: double.infinity,
-                          fit: BoxFit.fill,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.broken_image,
-                              size: 100,
-                              color: Colors.grey,
-                            ),
-                          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.85,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  children: [
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.6,
+                      ),
+                      child: CarouselSlider(
+                        options: CarouselOptions(
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          autoPlay: true,
+                          enlargeCenterPage: true,
+                          viewportFraction: 1.0,
+                          aspectRatio: 16 / 9,
                         ),
-                      );
-                    }).toList(),
-                  ),
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black),
-                      onPressed: () => Navigator.of(context).pop(),
+                        items: imageUrls.map((imageUrl) {
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              imageUrl,
+                              width: double.infinity,
+                              fit: BoxFit.fill,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  size: 100,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    Positioned(
+                      top: 5,
+                      right: 5,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );

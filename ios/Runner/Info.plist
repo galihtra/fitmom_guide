@@ -32,6 +32,8 @@
 	<string>Fitmom Guide memerlukan akses kamera untuk mengambil foto profil.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Fitmom Guide memerlukan akses ke galeri foto untuk memilih gambar profil dan testimonial.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Fitmom Guide memerlukan akses mikrofon untuk memutar audio pembelajaran yoga dan olahraga.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

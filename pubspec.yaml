@@ -66,6 +66,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+dependency_overrides:
+  vibration: ^3.1.5
+
 flutter_icons:
   android: true
   ios: true

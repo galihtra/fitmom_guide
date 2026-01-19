@@ -10,6 +10,7 @@ import '../../../core/utils/style.dart';
 import '../../../data/services/auth/auth_service.dart';
 import '../../../data/services/reward/reward_service.dart';
 import '../auth/login/login_screen.dart';
+import 'widget/delete_account_widget.dart';
 import 'widget/profile_avatar.dart';
 import 'widget/reward_tracker.dart';
 import 'widget/total_point.dart';
@@ -207,8 +208,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       RewardTracker(
                           claimedDays: claimedDays), // Tidak perlu Flexible
                       ContactAdminWidget(),
-                      // DeleteAccountWidget(),
                       TwibbonCardWidget(),
+                      const DeleteAccountWidget(),
                     ],
                   ),
                 ),

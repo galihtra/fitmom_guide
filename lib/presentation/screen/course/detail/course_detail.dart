@@ -229,17 +229,21 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        contentPadding: EdgeInsets.zero,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
+      builder: (context) {
+        final screenHeight = MediaQuery.of(context).size.height;
+        final dialogHeight = screenHeight * 0.7; // 70% of screen height
+        
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: EdgeInsets.zero,
+          content: SizedBox(
+            height: dialogHeight,
+            width: double.maxFinite,
+            child: Stack(
               children: [
                 CarouselSlider(
                   options: CarouselOptions(
-                    height: 500,
+                    height: dialogHeight,
                     autoPlay: true,
                     enlargeCenterPage: true,
                     viewportFraction: 1.0,
@@ -279,9 +283,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
 
     await prefs.setBool(key, true);

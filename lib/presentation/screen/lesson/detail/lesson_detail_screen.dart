@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:slider_button/slider_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -29,7 +29,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   final CollectionReference _soundCollection =
       FirebaseFirestore.instance.collection('sounds');
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final ja.AudioPlayer _audioPlayer = ja.AudioPlayer();
   String? _currentlyPlaying;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
@@ -66,7 +66,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               mute: _isMuted,
               showControls: false,
               showFullscreenButton: true,
-              loop: false,
+              loop: true,
               enableJavaScript: true,
               playsInline: false,
               strictRelatedVideos: false,
@@ -75,6 +75,13 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               origin: 'https://www.youtube-nocookie.com',
             ),
           );
+
+          _youtubeController?.listen((event) {
+            if (event.playerState == PlayerState.ended) {
+              _youtubeController?.seekTo(seconds: 0);
+              _youtubeController?.playVideo();
+            }
+          });
         }
       } catch (e) {
         print("Error initializing YouTube player: $e");

@@ -47,7 +47,8 @@ class RewardService {
         await _firestore.collection('users').doc(userId).get();
 
     if (userDoc.exists) {
-      return (userDoc['points'] ?? 0) as int;
+      final data = userDoc.data() as Map<String, dynamic>?;
+      return (data?['points'] as int?) ?? 0;
     }
     return 0;
   }
@@ -59,8 +60,11 @@ class RewardService {
   DocumentSnapshot userDoc =
       await _firestore.collection('users').doc(userId).get();
 
-  if (userDoc.exists && userDoc['lastClaimed'] != null) {
-    return userDoc['lastClaimed'];
+  if (userDoc.exists) {
+    final data = userDoc.data() as Map<String, dynamic>?;
+    if (data != null && data['lastClaimed'] != null) {
+      return data['lastClaimed'] as String;
+    }
   }
   return "";
 }

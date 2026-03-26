@@ -176,7 +176,8 @@ class LessonService {
       DocumentSnapshot snapshot = await transaction.get(userRef);
       if (!snapshot.exists) return;
 
-      int currentPoints = snapshot.get('points') ?? 0;
+      final data = snapshot.data() as Map<String, dynamic>?;
+      int currentPoints = data?['points'] as int? ?? 0;
       transaction.update(userRef, {'points': currentPoints + points});
     });
   }
